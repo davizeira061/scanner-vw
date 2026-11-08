@@ -1,0 +1,135 @@
+{
+  "00515": {
+    "vag_code": "00515",
+    "obd_code": "P0340",
+    "component": "Sensor Hall do Distribuidor / Sensor de Fase (G40)",
+    "description": "Sinal ausente, curto ao positivo ou aterramento, ou fora de sincronismo com o PMS.",
+    "symptoms": [
+      "Dificuldade na partida (motor gira bastante antes de pegar)",
+      "Motor entra em modo de emergência (corta em 5000 RPM)",
+      "Avanço de ignição travado sem correção dinâmica",
+      "Consumo de combustível elevado"
+    ],
+    "multimeter_test": [
+      "1. Desconectar o conector de 3 pinos do distribuidor Hall com a chave ligada.",
+      "2. Medir com multímetro entre os pinos 1 (-) e 3 (+): Deve apresentar tensão de bateria (~12.0V a 12.8V).",
+      "3. Se não houver 12V, verificar fusível da injeção e chicote para o pino da ECU.",
+      "4. Reconectar o plugue e inserir ponta de prova fina no pino 2 (Sinal).",
+      "5. Girar o motor manualmente pela polia: A tensão deve alternar claramente entre 0V e 5V a cada passagem da janela do rotor.",
+      "6. Se ficar travado em 0V ou 5V contínuos, o sensor Hall está avariado."
+    ],
+    "mechanical_fix": "Verificar se o distribuidor não está montado defasado em 180° ou dente adiantado/atrasado. Se o sinal não alternar, substituir a placa do sensor Hall ou o distribuidor completo."
+  },
+  "00525": {
+    "vag_code": "00525",
+    "obd_code": "P0130",
+    "component": "Sensor de Oxigênio - Sonda Lambda (G39)",
+    "description": "Sinal implausível, sonda travada em mistura rica ou pobre, ou aquecedor inoperante.",
+    "symptoms": [
+      "Cheiro forte de combustível no escapamento",
+      "Consumo excessivo de combustível",
+      "Falhas em acelerações rápidas ou marcha lenta oscilando",
+      "Fumaça escura no escape"
+    ],
+    "multimeter_test": [
+      "1. Aquecer o motor até a temperatura operacional (ventoinha armando, ECT > 85°C).",
+      "2. Nos fios brancos (aquecedor da sonda de 4 fios): Medir resistência (deve estar entre 2 a 14 Ohms). Medir alimentação de 12V do relé de bomba.",
+      "3. No fio preto (Sinal da sonda) contra o fio cinza/massa: A tensão deve oscilar rapidamente entre 0.1V (pobre) e 0.9V (rica) a cada 1 a 2 segundos em marcha lenta.",
+      "4. Se a tensão ficar travada abaixo de 0.2V: Mistura pobre ou entrada de ar falsa no coletor/mangueiras de vácuo.",
+      "5. Se a tensão ficar travada acima de 0.8V: Bico injetor estanque/gotejando ou excesso de pressão na linha de combustível."
+    ],
+    "mechanical_fix": "Testar estanqueidade do bico injetor, verificar pressão da bomba (deve ser 3.0 bar na 1AVP multiponto), inspecionar mangueira do sensor MAP e trocar a sonda se não oscilar."
+  },
+  "00519": {
+    "vag_code": "00519",
+    "obd_code": "P0106",
+    "component": "Sensor de Pressão Absoluta no Coletor (MAP - G71)",
+    "description": "Sinal do sensor MAP fora da faixa de tolerância ou implausível com TPS.",
+    "symptoms": [
+      "Motor 'amarrado' em subidas ou arrancadas",
+      "Marcha lenta oscilando violentamente",
+      "Buraco na aceleração ao pisar no acelerador",
+      "Motor apaga ao frear ou desacelerar"
+    ],
+    "multimeter_test": [
+      "1. Verificar mangueira de vácuo ligada ao coletor de admissão: Não pode ter furos, rachaduras ou óleo acumulado.",
+      "2. Com chave ligada e motor parado: Sinal no pino de saída deve ser de aproximadamente 4.0V a 4.8V (pressão atmosférica local ~1000 mbar).",
+      "3. Com motor em marcha lenta e quente: O sinal deve cair para cerca de 1.1V a 1.5V (~300 a 400 mbar).",
+      "4. Ao acelerar bruscamente: O sinal deve subir rapidamente próximo de 4V e retornar."
+    ],
+    "mechanical_fix": "Limpar bocal do coletor de admissão, trocar mangueira de vácuo por mangueira de silicone reforçada e testar o sensor integrado caso não varie a tensão com depressão de bomba de vácuo."
+  },
+  "00522": {
+    "vag_code": "00522",
+    "obd_code": "P0115",
+    "component": "Sensor de Temperatura da Água / Arrefecimento (ECT - G62)",
+    "description": "Sinal em curto ao positivo ou massa, valor fora da faixa plausível.",
+    "symptoms": [
+      "Dificuldade extrema de partida a frio ou a quente",
+      "Excesso de injeção a frio (motor afoga com facilidade)",
+      "Ventoinha ligando direto em velocidade máxima",
+      "Marcha lenta acelerada permanentemente (1500 RPM)"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência entre os dois terminais do sensor (sensor NTC de 2 ou 4 pinos):",
+      "   - A 0°C (frio): aprox. 5.000 a 6.500 Ohms.",
+      "   - A 20°C (temperatura ambiente): aprox. 2.000 a 3.000 Ohms.",
+      "   - A 80°C (motor aquecido): aprox. 275 a 375 Ohms.",
+      "   - A 100°C (ventoinha): aprox. 175 a 225 Ohms.",
+      "2. No conector do chicote desconectado com chave ligada: Deve haver 5.0V de referência no fio de sinal da ECU."
+    ],
+    "mechanical_fix": "Substituir o sensor de temperatura do motor (conector azul na carcaça da válvula termostática do Gol) e verificar sangria do sistema para evitar bolhas de ar sobre o sensor."
+  },
+  "00518": {
+    "vag_code": "00518",
+    "obd_code": "P0120",
+    "component": "Sensor de Posição da Borboleta (TPS - G69)",
+    "description": "Potenciômetro da borboleta com pista desgastada ou curto-circuito.",
+    "symptoms": [
+      "Falhas em aceleração intermediária",
+      "Picos ou quedas bruscas de potência ao manter o pé fixo no acelerador",
+      "Não reconhece condição de marcha lenta fechada (TPS > 2%)"
+    ],
+    "multimeter_test": [
+      "1. Com chave ligada, medir tensão de alimentação de 5.0V no pino de entrada.",
+      "2. No pino de sinal, com borboleta totalmente fechada: Deve medir entre 0.4V e 0.9V.",
+      "3. Abrir a borboleta manualmente de forma lenta e contínua até o final: A tensão deve subir suavemente até cerca de 4.5V a 4.8V, sem saltos, quedas ou interrupções.",
+      "4. Se a leitura saltar para 0V ou 5V no meio do curso, há pista resistiva rompida."
+    ],
+    "mechanical_fix": "Ajustar o batente mecânico do cabo do acelerador (não pode ficar enforcado) e substituir o potenciômetro da borboleta."
+  },
+  "00523": {
+    "vag_code": "00523",
+    "obd_code": "P0110",
+    "component": "Sensor de Temperatura do Ar de Admissão (ACT / IAT - G42)",
+    "description": "Sinal do sensor de temperatura do ar implausível.",
+    "symptoms": [
+      "Pequenas falhas na mistura em dias muito frios ou quentes",
+      "Ligeiro atraso na resposta do acelerador"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência no sensor NTC (geralmente integrado ao sensor MAP na carcaça plástica):",
+      "   - A 20°C: ~2.000 a 3.000 Ohms.",
+      "   - A 40°C: ~1.000 a 1.500 Ohms.",
+      "2. Verificar alimentação de 5V no chicote."
+    ],
+    "mechanical_fix": "Limpar resíduos de óleo de respiro na ponta do sensor com limpa-contato ou substituir o sensor integrado MAP/IAT."
+  },
+  "00532": {
+    "vag_code": "00532",
+    "obd_code": "P0562",
+    "component": "Tensão de Alimentação da Linha 30 / Linha 15",
+    "description": "Tensão da bateria muito baixa (< 10.5V) ou alternador com sobretensão (> 15.5V).",
+    "symptoms": [
+      "Apagões repentinos da injeção",
+      "Reset de códigos e adaptações de marcha lenta",
+      "Falha de comunicação no cabo KKL (comunicação cai repetidamente)"
+    ],
+    "multimeter_test": [
+      "1. Medir tensão diretamente nos polos da bateria com motor desligado: Deve ter > 12.4V.",
+      "2. Durante a partida: Não pode cair abaixo de 9.6V.",
+      "3. Com motor ligado em marcha lenta e luzes acesas: Alternador deve fornecer entre 13.8V e 14.4V."
+    ],
+    "mechanical_fix": "Verificar aterramentos do bloco do motor e da bateria ao chassi (malha de terra do Gol), testar regulador de voltagem do alternador e estado da bateria."
+  }
+}

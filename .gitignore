@@ -1,0 +1,35 @@
+# Python Bytecode e Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Arquivos de Build e Saída do PyInstaller
+build/
+*.manifest
+*.spec.bak
+
+# Distribuição de Executáveis (Binários distribuídos via GitHub Releases)
+dist/
+release/
+
+# Logs e Bancos de Dados de Telemetria Gerados em Runtime
+*.log
+logs/
+*.csv
+telemetry.db
+*.db
+
+# Ambientes Virtuais
+.venv/
+env/
+venv/
+ENV/
+
+# Configurações de IDEs
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates

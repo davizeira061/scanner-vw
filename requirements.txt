@@ -1,0 +1,7 @@
+# Dependências Principais de Execução (Runtime)
+PyQt6>=6.6.0
+pyserial>=3.5
+rich>=13.0.0
+
+# Dependências para Empacotamento e Compilação Standalone (Build)
+pyinstaller>=6.2.0
