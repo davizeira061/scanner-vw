@@ -39,6 +39,32 @@ class TestSensorDecoder(unittest.TestCase):
         self.assertEqual(fields[3]["name"], "Pressão Coletor (MAP)")
         self.assertEqual(fields[3]["value"], 360)
 
+    def test_decode_extended_formulas(self):
+        # Fórmula 14: Válvula IACV (%)
+        res_iacv = KW1281SensorDecoder.decode_field(14, 128, 0)
+        self.assertEqual(res_iacv["unit"], "%")
+        self.assertAlmostEqual(res_iacv["value"], 50.2, delta=0.5)
+
+        # Fórmula 18: Fator Lambda
+        res_lambda = KW1281SensorDecoder.decode_field(18, 128, 0)
+        self.assertEqual(res_lambda["unit"], "λ")
+        self.assertAlmostEqual(res_lambda["value"], 1.0, delta=0.01)
+
+        # Fórmula 25: Vazão MAF (g/s)
+        res_maf = KW1281SensorDecoder.decode_field(25, 20, 0)
+        self.assertEqual(res_maf["unit"], "g/s")
+        self.assertEqual(res_maf["value"], 4.0)
+
+        # Fórmula 33: Atraso de Ignição por Detonação (° KW)
+        res_retard = KW1281SensorDecoder.decode_field(33, 4, 0)
+        self.assertEqual(res_retard["unit"], "° KW")
+        self.assertEqual(res_retard["value"], 3.0)
+
+        # Fórmula 34: Tensão do Sensor de Detonação (V)
+        res_knock = KW1281SensorDecoder.decode_field(34, 50, 0)
+        self.assertEqual(res_knock["unit"], "V")
+        self.assertAlmostEqual(res_knock["value"], 0.975, delta=0.01)
+
 
 if __name__ == "__main__":
     unittest.main()

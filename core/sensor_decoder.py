@@ -86,20 +86,99 @@ class KW1281SensorDecoder:
             unit = "mbar"
             text = f"{int(val_num)} mbar"
 
+        elif formula_type == 13:  # Tensão Sonda Lambda / Fator Lambda
+            val_num = round((b - 128) * 0.0078125 + 1.0, 3) if c == 0 else round(b * 0.001 * c, 3)
+            unit = "V"
+            text = f"{val_num:.3f} V"
+
+        elif formula_type == 14:  # Atuador Marcha Lenta (IACV) / Válvula Cânister (%)
+            val_num = round(b * 100.0 / 255.0, 1)
+            unit = "%"
+            text = f"{val_num:.1f} %"
+
         elif formula_type == 15:  # Tempo de Injeção (ms)
             val_num = round(b * 0.05 if c == 0 else b * c * 0.001, 2)
             unit = "ms"
             text = f"{val_num:.2f} ms"
+
+        elif formula_type == 18:  # Fator Lambda (λ)
+            val_num = round(b * 0.001 * c if c != 0 else b * 0.0078125, 3)
+            unit = "λ"
+            text = f"{val_num:.3f} λ"
+
+        elif formula_type == 19:  # Quantidade de Combustível no Tanque (L)
+            val_num = round(float(b * 0.5 if c == 0 else b * c * 0.1), 1)
+            unit = "L"
+            text = f"{val_num:.1f} L"
 
         elif formula_type == 20:  # Regulação Lambda (%)
             val_num = round((b - 128) * 100.0 / 128.0, 1)
             unit = "%"
             text = f"{val_num:+.1f} %"
 
+        elif formula_type == 21:  # Tensão de Referência / Sensores (V)
+            val_num = round(b * 0.001 * c if c != 0 else b * 0.02, 2)
+            unit = "V"
+            text = f"{val_num:.2f} V"
+
+        elif formula_type == 22:  # Período / Tempo de Operação (s)
+            val_num = round(b * 0.01 * c if c != 0 else float(b), 2)
+            unit = "s"
+            text = f"{val_num:.2f} s"
+
+        elif formula_type == 23:  # Ângulo de Borboleta (°)
+            val_num = round(b * 0.5 if c == 0 else b * c * 0.01, 1)
+            unit = "°"
+            text = f"{val_num:.1f} °"
+
+        elif formula_type == 25:  # Vazão de Massa de Ar - MAF (g/s)
+            val_num = round(b * 0.01 * c if c != 0 else b * 0.2, 2)
+            unit = "g/s"
+            text = f"{val_num:.2f} g/s"
+
+        elif formula_type == 27:  # Resistência Elétrica (Ohms)
+            val_num = round(float(b * 10 if c == 0 else b * c), 1)
+            unit = "Ω"
+            text = f"{val_num:.1f} Ω"
+
+        elif formula_type == 28:  # Temperatura do Óleo (°C)
+            val_num = round(float(b - 50 if c == 0 else (b - 100) * 0.1 * c), 1)
+            unit = "°C"
+            text = f"{val_num:.1f} °C"
+
+        elif formula_type == 30:  # Temperatura Gases de Escape / EGT (°C)
+            val_num = round(b * 5.0 if c == 0 else (b - 100) * 0.1 * c, 1)
+            unit = "°C"
+            text = f"{val_num:.1f} °C"
+
+        elif formula_type == 33:  # Atraso de Ignição por Detonação (° KW)
+            val_num = round(b * 0.75, 1)
+            unit = "° KW"
+            text = f"{val_num:.1f} ° KW"
+
+        elif formula_type == 34:  # Tensão do Sensor de Detonação (V)
+            val_num = round(b * 0.0195, 3)
+            unit = "V"
+            text = f"{val_num:.3f} V"
+
         elif formula_type == 36:  # Odômetro / Distância (km)
             val_num = float(b * 2560 + c * 10)
             unit = "km"
             text = f"{int(val_num)} km"
+
+        elif formula_type == 37:  # Bits de Prontidão / Status de Emissões
+            bits_str = f"{b:08b}"
+            unit = "bits"
+            text = bits_str
+
+        elif formula_type == 40:  # Carga / Torque Relativo do Motor (%)
+            val_num = round(b * 100.0 / 255.0, 1)
+            unit = "%"
+            text = f"{val_num:.1f} %"
+
+        elif formula_type == 44:  # Horário / Formato de Tempo
+            unit = "hh:mm"
+            text = f"{b:02d}:{c:02d}"
 
         else:
             # Fórmula padrão genérica

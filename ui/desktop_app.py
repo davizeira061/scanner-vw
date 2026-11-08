@@ -1,20 +1,14 @@
 """
 Aplicação Gráfica Desktop Nativa do Scanner-VW (OpenVAG).
-Interface completa em PyQt6 no padrão Dark Mode profissional.
+Interface profissional de engenharia automotiva em PyQt6 (Estilo Industrial Alemão / ODIS & Bosch ESI).
 Implementa 100% dos fluxos e telas do VCDS-Lite com melhorias gráficas e funcionais:
-- Plug-and-Play: Identificação e seleção automática da porta COM ao conectar o cabo KKL (CH340/CH341/FTDI)
-- Seleção de Módulos (01-Motor, 03-ABS, 15-Airbag, 17-Painel, 25-Immo, etc.)
-- Auto-Scan por chassi com barra de progresso (Gol Special, Gol G3/G4, Golf IV, etc.)
-- Leitura de Identificação da ECU
-- 02: Memória de Falhas com Doutor de DTCs e guia de testes com multímetro
-- 05: Limpeza de Falhas (Clear DTCs)
-- 08: Blocos de Medição com osciloscópio gráfico integrado em tempo real
-- 04: Ajuste Básico (Trava de Ponto de Ignição e TBA)
-- 03: Teste Sequencial de Atuadores (Output Tests)
-- 07: Recodificação de Software (Recode)
-- 10: Leitura e Gravação de Canais de Adaptação
-- 11: Login / Security Access
-- Opções e Teste de Porta Serial CH341
+- Plug-and-Play Watchdog: Identificação automática da porta COM (CH340/CH341/FTDI) a cada 800ms
+- Multithreading (QThread): Conexão assíncrona e Auto-Scan sem travamento da interface gráfica
+- Keep-Alive Ativo (0x09): Watchdog periódico (350ms) evitando timeout e queda de sessão com a ECU
+- Osciloscópio Gráfico Multi-Canal com Seletor e Estatísticas em Tempo Real (Min/Max/Méd/Atual)
+- Datalogger Contínuo em CSV para voltas de teste de rodagem
+- Assistente Zero-Friction de Calibração de Borboleta (TBI) para Bosch MP 9.0 e Marelli 1AVP
+- Doutor de DTCs integrado com guias de testes elétricos no chicote com multímetro
 """
 
 import sys
@@ -29,7 +23,7 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QComboBox, QLineEdit, QTableWidget, QTableWidgetItem,
     QTabWidget, QGroupBox, QProgressBar, QMessageBox, QDialog, QHeaderView,
     QTextEdit, QSpinBox, QSplitter, QInputDialog, QCheckBox,
-    QRadioButton, QButtonGroup, QScrollArea, QFrame
+    QRadioButton, QButtonGroup, QScrollArea, QFrame, QGridLayout
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QColor, QPainter, QPen, QBrush
@@ -42,135 +36,229 @@ from database.telemetry import TelemetryLogger
 
 
 DARK_STYLE = """
+/* Tema Profissional de Engenharia Automotiva (Inspirado em ODIS / Bosch ESI[tronic]) */
 QMainWindow, QDialog, QWidget {
-    background-color: #0f172a;
-    color: #f8fafc;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background-color: #0b0f17;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 13px;
 }
 QGroupBox {
-    border: 1px solid #334155;
-    border-radius: 8px;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
     margin-top: 14px;
-    padding-top: 12px;
-    font-weight: bold;
+    padding-top: 14px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     color: #38bdf8;
+    background-color: #0f1522;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 12px;
-    padding: 0 4px;
+    padding: 0 6px;
+    background-color: #0f1522;
 }
 QPushButton {
-    background-color: #1e293b;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-weight: bold;
-    color: #f8fafc;
-    min-height: 20px;
+    background-color: #162032;
+    border: 1px solid #28374f;
+    border-radius: 5px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #f1f5f9;
+    min-height: 22px;
 }
 QPushButton:hover {
-    background-color: #334155;
-    border-color: #38bdf8;
+    background-color: #1e2d45;
+    border-color: #0284c7;
     color: #38bdf8;
 }
 QPushButton:pressed {
     background-color: #0284c7;
+    border-color: #0284c7;
     color: #ffffff;
 }
+QPushButton:disabled {
+    background-color: #111723;
+    border-color: #1e2738;
+    color: #475569;
+}
+QPushButton.primary {
+    background-color: #0284c7;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+QPushButton.primary:hover {
+    background-color: #0369a1;
+    border-color: #38bdf8;
+}
 QPushButton.danger {
-    background-color: #991b1b;
-    border-color: #dc2626;
-    color: #fee2e2;
+    background-color: #881337;
+    border-color: #9f1239;
+    color: #fecdd3;
 }
 QPushButton.danger:hover {
-    background-color: #dc2626;
+    background-color: #9f1239;
+    border-color: #e11d48;
 }
 QPushButton.success {
-    background-color: #065f46;
-    border-color: #10b981;
-    color: #ecfdf5;
+    background-color: #064e3b;
+    border-color: #065f46;
+    color: #a7f3d0;
 }
 QPushButton.success:hover {
-    background-color: #059669;
+    background-color: #065f46;
+    border-color: #10b981;
 }
 QTableWidget {
-    background-color: #1e293b;
-    border: 1px solid #334155;
+    background-color: #0f1522;
+    border: 1px solid #1e293b;
     border-radius: 6px;
-    gridline-color: #334155;
-    color: #f8fafc;
-    selection-background-color: #0284c7;
+    gridline-color: #1a2333;
+    color: #e2e8f0;
+    selection-background-color: #1e3a5f;
+    selection-color: #ffffff;
 }
 QHeaderView::section {
-    background-color: #0f172a;
+    background-color: #0b0f17;
     color: #94a3b8;
-    font-weight: bold;
-    border: 1px solid #334155;
-    padding: 4px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    border-bottom: 2px solid #1e293b;
+    border-right: 1px solid #162030;
+    padding: 6px 8px;
 }
 QLineEdit, QComboBox, QSpinBox {
-    background-color: #1e293b;
-    border: 1px solid #475569;
-    border-radius: 5px;
-    padding: 6px;
+    background-color: #111724;
+    border: 1px solid #232f44;
+    border-radius: 4px;
+    padding: 6px 10px;
     color: #f8fafc;
 }
 QLineEdit:focus, QComboBox:focus, QSpinBox:focus {
-    border: 1px solid #38bdf8;
+    border: 1px solid #0284c7;
+    background-color: #141d2e;
 }
 QTabBar::tab {
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 8px 16px;
-    margin-right: 2px;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    color: #94a3b8;
+    background: #111724;
+    border: 1px solid #1e293b;
+    border-bottom: none;
+    padding: 9px 18px;
+    margin-right: 3px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    color: #8da2bb;
+    font-weight: 600;
+    font-size: 12px;
 }
 QTabBar::tab:selected {
-    background: #0f172a;
-    border-bottom: 2px solid #38bdf8;
+    background: #0f1522;
+    border-top: 2px solid #0284c7;
     color: #38bdf8;
-    font-weight: bold;
+}
+QTabBar::tab:hover:!selected {
+    background: #172133;
+    color: #cbd5e1;
 }
 QProgressBar {
-    border: 1px solid #334155;
-    border-radius: 5px;
+    border: 1px solid #1e293b;
+    border-radius: 4px;
     text-align: center;
-    background-color: #1e293b;
-    color: #ffffff;
+    background-color: #0c1018;
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 11px;
 }
 QProgressBar::chunk {
     background-color: #0284c7;
-    border-radius: 4px;
+    border-radius: 3px;
 }
 QCheckBox {
     color: #94a3b8;
-    font-weight: bold;
+    font-weight: 600;
 }
 QCheckBox::indicator:checked {
     background-color: #0284c7;
     border: 1px solid #38bdf8;
     border-radius: 3px;
 }
+QScrollBar:vertical {
+    border: none;
+    background: #0b0f17;
+    width: 8px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #232f44;
+    min-height: 20px;
+    border-radius: 4px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #334155;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
 """
 
 
 class LiveMiniScopeWidget(QWidget):
+    """
+    Osciloscópio digital embutido de alta precisão com suporte a múltiplos canais,
+    retículo técnico de medição e painel HUD com métricas estatísticas em tempo real
+    (Atual, Mínimo, Máximo, Média e Contagem de Amostras).
+    """
+
+    CHANNEL_COLORS = [
+        QColor("#38bdf8"),  # Canal 1: Azul Cyan
+        QColor("#34d399"),  # Canal 2: Verde Esmeralda
+        QColor("#fbbf24"),  # Canal 3: Âmbar
+        QColor("#f43f5e")   # Canal 4: Rosa/Vermelho
+    ]
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumHeight(140)
-        self.history = []
+        self.setMinimumHeight(170)
         self.max_points = 120
+        self.selected_channel = 0  # 0 = Todos, 1..4 = Canais específicos
+        self.channel_names = ["Canal 1", "Canal 2", "Canal 3", "Canal 4"]
+        self.channel_units = ["", "", "", ""]
+        self.channels_history: Dict[int, List[float]] = {0: [], 1: [], 2: [], 3: []}
+
+    def set_channel_labels(self, labels: List[str], units: List[str]):
+        for i in range(min(4, len(labels))):
+            self.channel_names[i] = labels[i]
+            if i < len(units):
+                self.channel_units[i] = units[i]
+
+    def add_channels_data(self, values: List[float]):
+        for i, val in enumerate(values[:4]):
+            self.channels_history[i].append(val)
+            if len(self.channels_history[i]) > self.max_points:
+                self.channels_history[i].pop(0)
+        self.update()
 
     def add_point(self, val: float):
-        self.history.append(val)
-        if len(self.history) > self.max_points:
-            self.history.pop(0)
-        self.update()
+        # Compatibilidade com chamadas legado
+        self.add_channels_data([val])
+
+    def get_stats(self, ch_idx: int) -> Dict[str, Any]:
+        data = self.channels_history.get(ch_idx, [])
+        if not data:
+            return {"cur": "--", "min": "--", "max": "--", "avg": "--", "count": 0}
+        return {
+            "cur": f"{data[-1]:.2f}",
+            "min": f"{min(data):.2f}",
+            "max": f"{max(data):.2f}",
+            "avg": f"{sum(data)/len(data):.2f}",
+            "count": len(data)
+        }
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -178,46 +266,172 @@ class LiveMiniScopeWidget(QWidget):
 
         w = self.width()
         h = self.height()
-        painter.fillRect(0, 0, w, h, QColor("#090d16"))
+        canvas_h = h - 28  # Reserva 28px no rodapé para o HUD de estatísticas
 
-        painter.setPen(QPen(QColor("#1e293b"), 1, Qt.PenStyle.DashLine))
-        for y in range(20, h, 30):
+        # Fundo Preto Técnico
+        painter.fillRect(0, 0, w, h, QColor("#080c14"))
+
+        # Grid de Retículo do Osciloscópio
+        painter.setPen(QPen(QColor("#152033"), 1, Qt.PenStyle.DashLine))
+        for y in range(20, canvas_h, 25):
             painter.drawLine(0, y, w, y)
         for x in range(30, w, 40):
-            painter.drawLine(x, 0, x, h)
+            painter.drawLine(x, 0, x, canvas_h)
 
-        if len(self.history) < 2:
-            return
+        # Barra Divisória do HUD
+        painter.setPen(QPen(QColor("#1e293b"), 1))
+        painter.drawLine(0, canvas_h, w, canvas_h)
+        painter.fillRect(0, canvas_h + 1, w, 27, QColor("#0d131f"))
 
-        min_v = min(self.history)
-        max_v = max(self.history)
-        if max_v == min_v:
-            max_v += 1.0
+        # Determina canais a desenhar
+        channels_to_draw = range(4) if self.selected_channel == 0 else [self.selected_channel - 1]
 
-        step = w / (self.max_points - 1)
-        painter.setPen(QPen(QColor("#38bdf8"), 2))
+        # Encontra limites globais de escala
+        all_vals = []
+        for ch in channels_to_draw:
+            all_vals.extend(self.channels_history.get(ch, []))
 
-        for i in range(len(self.history) - 1):
-            y1 = h - int(((self.history[i] - min_v) / (max_v - min_v)) * (h - 20) + 10)
-            y2 = h - int(((self.history[i + 1] - min_v) / (max_v - min_v)) * (h - 20) + 10)
-            x1 = int(i * step)
-            x2 = int((i + 1) * step)
-            painter.drawLine(x1, y1, x2, y2)
+        if len(all_vals) >= 2:
+            min_v = min(all_vals)
+            max_v = max(all_vals)
+            if max_v == min_v:
+                max_v += 1.0
+
+            step = w / (self.max_points - 1)
+
+            # Desenha as curvas de cada canal
+            for ch in channels_to_draw:
+                hist = self.channels_history.get(ch, [])
+                if len(hist) < 2:
+                    continue
+
+                color = self.CHANNEL_COLORS[ch % len(self.CHANNEL_COLORS)]
+                painter.setPen(QPen(color, 2))
+
+                for i in range(len(hist) - 1):
+                    y1 = canvas_h - int(((hist[i] - min_v) / (max_v - min_v)) * (canvas_h - 24) + 12)
+                    y2 = canvas_h - int(((hist[i + 1] - min_v) / (max_v - min_v)) * (canvas_h - 24) + 12)
+                    x1 = int(i * step)
+                    x2 = int((i + 1) * step)
+                    painter.drawLine(x1, y1, x2, y2)
+
+                # Ponto cursor na extremidade final
+                last_y = canvas_h - int(((hist[-1] - min_v) / (max_v - min_v)) * (canvas_h - 24) + 12)
+                last_x = int((len(hist) - 1) * step)
+                painter.setBrush(QBrush(color))
+                painter.drawEllipse(last_x - 3, last_y - 3, 6, 6)
+
+            # Rótulos de Escala
+            painter.setPen(QPen(QColor("#64748b")))
+            painter.setFont(QFont("Segoe UI", 8))
+            painter.drawText(8, 14, f"MAX: {max_v:.1f}")
+            painter.drawText(8, canvas_h - 6, f"MIN: {min_v:.1f}")
+
+        # Renderiza HUD de Estatísticas na parte inferior
+        hud_ch = 0 if self.selected_channel == 0 else self.selected_channel - 1
+        stats = self.get_stats(hud_ch)
+        name = self.channel_names[hud_ch] if hud_ch < len(self.channel_names) else f"Canal {hud_ch+1}"
+        unit = self.channel_units[hud_ch] if hud_ch < len(self.channel_units) else ""
+
+        color = self.CHANNEL_COLORS[hud_ch % len(self.CHANNEL_COLORS)]
+        painter.setPen(QPen(color))
+        painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        painter.drawText(10, h - 8, f"● {name}: {stats['cur']} {unit}")
 
         painter.setPen(QPen(QColor("#94a3b8")))
-        painter.setFont(QFont("Segoe UI", 8))
-        painter.drawText(8, 16, f"Max: {max_v:.1f}")
-        painter.drawText(8, h - 6, f"Min: {min_v:.1f}")
+        painter.setFont(QFont("Segoe UI", 9))
+        hud_info = f"MIN: {stats['min']} {unit}  |  MÁX: {stats['max']} {unit}  |  MÉD: {stats['avg']} {unit}  |  Amostras: {stats['count']}"
+        painter.drawText(220, h - 8, hud_info)
+
+
+class ConnectionWorker(QThread):
+    """Worker assíncrono para conexão com a ECU sem travar a interface gráfica."""
+    connection_success = pyqtSignal(dict, dict)
+    connection_failed = pyqtSignal(str)
+
+    def __init__(self, engine: KW1281Engine, address: int):
+        super().__init__()
+        self.engine = engine
+        self.address = address
+
+    def run(self):
+        try:
+            self.engine.connect(self.address)
+            info = self.engine.ecu_info
+            detected = self.engine.identify_ecu_system()
+            self.connection_success.emit(info, detected)
+        except Exception as e:
+            self.connection_failed.emit(str(e))
+
+
+class AutoScanWorker(QThread):
+    """Worker assíncrono para execução do Auto-Scan em múltiplos módulos."""
+    progress_updated = pyqtSignal(int, int, str)
+    module_scanned = pyqtSignal(int, str, str, str)
+    scan_completed = pyqtSignal(int, int)
+
+    def __init__(self, autoscan_mgr: AutoScanManager, modules: List[int], port: str, is_mock: bool):
+        super().__init__()
+        self.autoscan_mgr = autoscan_mgr
+        self.modules = modules
+        self.port = port
+        self.is_mock = is_mock
+        self.is_cancelled = False
+
+    def cancel(self):
+        self.is_cancelled = True
+
+    def run(self):
+        total = len(self.modules)
+        responded = 0
+
+        for idx, addr in enumerate(self.modules):
+            if self.is_cancelled:
+                break
+
+            name = self.autoscan_mgr.get_module_name(addr)
+            self.progress_updated.emit(idx + 1, total, name)
+
+            if self.is_mock:
+                time.sleep(0.12)
+                if addr == 0x01:
+                    status = "OK — Respondendo"
+                    dtcs = "00515 (Hall), 00525 (Lambda)"
+                    responded += 1
+                else:
+                    status = "Sem resposta"
+                    dtcs = "-"
+            else:
+                try:
+                    ser = KLineSerialInterface(port=self.port)
+                    ser.open()
+                    eng = KW1281Engine(serial_interface=ser, mock_mode=False)
+                    eng.connect(addr)
+                    status = f"OK ({eng.ecu_info.get('part_number', 'Identificado')})"
+                    dtc_list = eng.read_dtcs()
+                    if dtc_list:
+                        dtcs = f"{len(dtc_list)} avaria(s): " + ", ".join(d['code'] for d in dtc_list[:3])
+                    else:
+                        dtcs = "Sem avarias (0 falhas)"
+                    responded += 1
+                    eng.disconnect()
+                except Exception:
+                    status = "Sem resposta"
+                    dtcs = "-"
+
+            self.module_scanned.emit(addr, name, status, dtcs)
+
+        self.scan_completed.emit(total, responded)
 
 
 class TBICalibrationWidget(QWidget):
     """
     Widget assistente especializado para calibração de TBI (TBA) e reset da marcha lenta.
     Suporta:
-    1. Magneti Marelli 1AVP (Gol G2/G3 MI) - Reset EEPROM Canal 00 + Ciclo de Chave
-    2. E-Gas Drive-by-Wire (Grupo 060 - TBA) para ME7.5 / 4LV / EA111
-    3. TBI Semi-Eletrônico a Cabo (Grupo 098 - TBA) para Golf/Passat
-    4. Ajuste Básico de Avanço de Ignição (Grupo 001 - 1AVP Trava 9.0° APMS)
+    1. Bosch Motronic MP 9.0 (Gol Mi 1.0 8v) - Grupo 098
+    2. Magneti Marelli 1AVP / 1AVB - Reset EEPROM Canal 00 + Ciclo de Chave 15s/30s
+    3. Bosch Motronic ME 7.x (E-Gas Eletrônico) - Grupo 060
+    4. Ajuste Básico de Ignição 1AVP (Grupo 001) - Trava 9.0° APMS
     """
 
     def __init__(self, engine: Optional[KW1281Engine] = None, get_port_fn=None, is_mock_fn=None, parent=None):
@@ -229,7 +443,7 @@ class TBICalibrationWidget(QWidget):
 
         self.poll_timer = QTimer(self)
         self.poll_timer.timeout.connect(self._poll_basic_settings)
-        self.active_group = 60
+        self.active_group = 98
 
         self.countdown_remaining = 0
         self.countdown_total = 0
@@ -247,13 +461,13 @@ class TBICalibrationWidget(QWidget):
         layout = QVBoxLayout(container)
         layout.setSpacing(12)
 
-        # Card Dinâmico do Veículo e Procedimento Específico
+        # Card Dinâmico do Veículo e Procedimento
         self.card_vehicle = QFrame()
-        self.card_vehicle.setStyleSheet("background-color: #0f172a; border: 2px solid #0284c7; border-radius: 8px; padding: 14px;")
+        self.card_vehicle.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #0284c7; border-radius: 6px; padding: 14px;")
         card_layout = QVBoxLayout(self.card_vehicle)
 
         self.lbl_veh_title = QLabel("🚗 Aguardando Leitura do Veículo...")
-        self.lbl_veh_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #38bdf8;")
+        self.lbl_veh_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
         self.lbl_veh_desc = QLabel("O OpenVAG lê a central conectada e prepara apenas o procedimento aplicável ao seu motor (sem opções confusas de outros veículos).")
         self.lbl_veh_desc.setStyleSheet("color: #cbd5e1; font-size: 13px;")
 
@@ -261,8 +475,8 @@ class TBICalibrationWidget(QWidget):
         card_layout.addWidget(self.lbl_veh_desc)
         layout.addWidget(self.card_vehicle)
 
-        # Grupo de Seleção de Modo (Oculto por padrão para simplificar a operação de oficina)
-        self.group_modes = QGroupBox("⚙️ Seleção Manual de Sistema (Opcional / Modo Bancada)")
+        # Grupo de Seleção de Modo (Manual / Avançado)
+        self.group_modes = QGroupBox("⚙️ Seleção Manual de Sistema (Modo Bancada)")
         self.group_modes.setVisible(False)
         mode_layout = QVBoxLayout(self.group_modes)
 
@@ -292,21 +506,20 @@ class TBICalibrationWidget(QWidget):
         mode_layout.addWidget(self.radio_timing)
         layout.addWidget(self.group_modes)
 
-        # Botão recolhido para exibir o modo manual se necessário
         self.btn_toggle_manual = QPushButton("⚙️ Mostrar Opções Manuais de Outras Centrais (Avançado)")
         self.btn_toggle_manual.setStyleSheet("background: transparent; border: none; color: #64748b; font-size: 11px; text-decoration: underline;")
         self.btn_toggle_manual.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_toggle_manual.clicked.connect(self._toggle_manual_modes)
         layout.addWidget(self.btn_toggle_manual)
 
-        # Caixa de Explicação Técnica Dinâmica
+        # Explicação Técnica
         self.txt_explanation = QTextEdit()
         self.txt_explanation.setReadOnly(True)
-        self.txt_explanation.setMaximumHeight(100)
-        self.txt_explanation.setStyleSheet("background-color: #0b1329; border: 1px solid #334155; border-radius: 6px; padding: 8px; color: #cbd5e1;")
+        self.txt_explanation.setMaximumHeight(85)
+        self.txt_explanation.setStyleSheet("background-color: #0b0f17; border: 1px solid #1e293b; border-radius: 5px; padding: 8px; color: #cbd5e1;")
         layout.addWidget(self.txt_explanation)
 
-        # Box de Pré-condições / Checklist
+        # Checklist de Oficina
         group_pre = QGroupBox("Checklist Obrigatório de Oficina")
         pre_layout = QVBoxLayout(group_pre)
         self.chk_ignition = QCheckBox("1. Chave na posição de ignição com motor DESLIGADO")
@@ -327,44 +540,43 @@ class TBICalibrationWidget(QWidget):
         # Barra de Ações
         action_box = QHBoxLayout()
         self.btn_start = QPushButton("▶ Iniciar Calibração de Borboleta")
-        self.btn_start.setMinimumHeight(46)
+        self.btn_start.setMinimumHeight(44)
         self.btn_start.setStyleSheet("background-color: #0284c7; color: white; font-weight: bold; font-size: 14px;")
         self.btn_start.clicked.connect(self.start_calibration)
         action_box.addWidget(self.btn_start)
 
         self.btn_stop = QPushButton("⏹ Interromper")
-        self.btn_stop.setMinimumHeight(46)
+        self.btn_stop.setMinimumHeight(44)
         self.btn_stop.setEnabled(False)
-        self.btn_stop.setStyleSheet("background-color: #475569; color: white; font-weight: bold;")
+        self.btn_stop.setStyleSheet("background-color: #334155; color: white; font-weight: bold;")
         self.btn_stop.clicked.connect(self.stop_calibration)
         action_box.addWidget(self.btn_stop)
         layout.addLayout(action_box)
 
-        # Banner de Status da Operação
+        # Banner de Status
         self.lbl_status = QLabel("Status: Aguardando comando...")
-        self.lbl_status.setStyleSheet("background-color: #1e293b; color: #94a3b8; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+        self.lbl_status.setStyleSheet("background-color: #111724; color: #94a3b8; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
         layout.addWidget(self.lbl_status)
 
-        # Assistente de Ciclo de Chave (Específico para 1AVP - Canal 00)
+        # Ciclo de Chave (1AVP)
         self.box_1avp_wizard = QGroupBox("Ciclo de Chave & Inicialização da 1AVP (Passo a Passo de Oficina)")
         wiz_layout = QVBoxLayout(self.box_1avp_wizard)
 
-        self.lbl_wiz_step1 = QLabel("<b>Passo 1: Desligue a ignição</b> por 15 segundos para desarmar o relé principal (Power Latch da 1AVP).")
+        self.lbl_wiz_step1 = QLabel("<b>Passo 1: Desligue a ignição</b> por 15 segundos para desarmar o relé principal.")
         wiz_layout.addWidget(self.lbl_wiz_step1)
         self.btn_timer_15s = QPushButton("⏱ Iniciar Cronômetro de 15 Segundos (Desligado)")
         self.btn_timer_15s.clicked.connect(lambda: self._start_countdown(15, "Passo 1: Chave desligada. Aguarde o desarmamento do relé..."))
         wiz_layout.addWidget(self.btn_timer_15s)
 
-        self.lbl_wiz_step2 = QLabel("<b>Passo 2: Ligue a ignição</b> (sem dar partida) por 30 segundos. A ECU 1AVP bate o motor de passo nos batentes mecânicos e calibra a voltagem de repouso do TPS.")
+        self.lbl_wiz_step2 = QLabel("<b>Passo 2: Ligue a ignição</b> (sem dar partida) por 30 segundos. A ECU calibra o TPS e passos.")
         wiz_layout.addWidget(self.lbl_wiz_step2)
         self.btn_timer_30s = QPushButton("⏱ Iniciar Cronômetro de 30 Segundos (Chave Ligada sem Partida)")
-        self.btn_timer_30s.clicked.connect(lambda: self._start_countdown(30, "Passo 2: Chave ligada (sem partida). A 1AVP está indexando os passos e lendo o TPS..."))
+        self.btn_timer_30s.clicked.connect(lambda: self._start_countdown(30, "Passo 2: Chave ligada (sem partida). A 1AVP está indexando os passos..."))
         wiz_layout.addWidget(self.btn_timer_30s)
 
-        self.lbl_wiz_step3 = QLabel("<b>Passo 3: Dê a partida</b> no motor SEM acelerar e deixe em marcha lenta livre até a ventoinha armar 2 vezes para aprendizado térmico.")
+        self.lbl_wiz_step3 = QLabel("<b>Passo 3: Dê a partida</b> no motor SEM acelerar e deixe em marcha lenta até aquecer.")
         wiz_layout.addWidget(self.lbl_wiz_step3)
 
-        # Countdown Display
         self.countdown_box = QWidget()
         self.countdown_box.setVisible(False)
         cd_layout = QVBoxLayout(self.countdown_box)
@@ -381,7 +593,7 @@ class TBICalibrationWidget(QWidget):
 
         layout.addWidget(self.box_1avp_wizard)
 
-        # Tabela de Telemetria ao Vivo (Grupos 060, 098, 001)
+        # Tabela Live
         self.table_box = QGroupBox("Parâmetros de Ajuste Básico em Tempo Real (KWP1281 Live Feedback)")
         table_layout = QVBoxLayout(self.table_box)
         self.table_tbi_live = QTableWidget(4, 4)
@@ -395,7 +607,6 @@ class TBICalibrationWidget(QWidget):
         main_v.setContentsMargins(0, 0, 0, 0)
         main_v.addWidget(scroll)
 
-        # Estado inicial limpo: Nenhuma informação fictícia sem estar conectado
         self.box_1avp_wizard.setVisible(False)
         self.table_box.setVisible(False)
         self.txt_explanation.setHtml(
@@ -424,44 +635,43 @@ class TBICalibrationWidget(QWidget):
         rec_mode = detected.get("recommended_tbi_mode", 3)
         throttle = detected.get("throttle_type", "")
 
-        # Oculta modos manuais para simplificar a visão do mecânico
         self.group_modes.setVisible(False)
         self.btn_toggle_manual.setText("⚙️ Mostrar Opções Manuais de Outras Centrais (Avançado)")
 
         if family == "BOSCH_MP90" or rec_mode == 3:
             self.lbl_veh_title.setText(f"🚗 Veículo Identificado: {brand} {model} (Gol G2 1.0 8v)")
-            self.lbl_veh_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #fbbf24;")
+            self.lbl_veh_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #fbbf24;")
             self.lbl_veh_desc.setText(
                 f"<b>Arquitetura:</b> {throttle}<br>"
                 "<b>Procedimento Automático:</b> Calibração de Batente de Marcha Lenta (Ajuste Básico - Grupo 098).<br>"
-                "<i>Basta conferir as pré-condições abaixo e clicar em Iniciar. O OpenVAG comandará a borboleta e confirmará o alinhamento.</i>"
+                "<i>Basta conferir as pré-condições abaixo e clicar em Iniciar.</i>"
             )
-            self.card_vehicle.setStyleSheet("background-color: #0f172a; border: 2px solid #fbbf24; border-radius: 8px; padding: 12px;")
+            self.card_vehicle.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #fbbf24; border-radius: 6px; padding: 12px;")
             self.radio_cable.setChecked(True)
             self._on_mode_changed(3, True)
             self.btn_start.setText("▶ Iniciar Calibração de Borboleta (Grupo 098)")
 
         elif family == "MARELLI_1AVP" or rec_mode == 1:
             self.lbl_veh_title.setText(f"🚗 Veículo Identificado: {brand} {model} (Gol / Santana)")
-            self.lbl_veh_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #38bdf8;")
+            self.lbl_veh_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
             self.lbl_veh_desc.setText(
                 f"<b>Arquitetura:</b> {throttle}<br>"
                 "<b>Procedimento Automático:</b> Reset de Parâmetros de Marcha Lenta (Canal 00 de Adaptação).<br>"
                 "<i>A central apagará os parâmetros autoadaptativos da EEPROM e liberará o passo a passo de ciclo de chave.</i>"
             )
-            self.card_vehicle.setStyleSheet("background-color: #0f172a; border: 2px solid #38bdf8; border-radius: 8px; padding: 12px;")
+            self.card_vehicle.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 12px;")
             self.radio_1avp.setChecked(True)
             self._on_mode_changed(1, True)
             self.btn_start.setText("▶ Executar Reset de Marcha Lenta (Canal 00)")
 
         elif family == "BOSCH_ME7" or rec_mode == 2:
             self.lbl_veh_title.setText(f"🚗 Veículo Identificado: {brand} {model} (E-Gas Eletrônico)")
-            self.lbl_veh_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #34d399;")
+            self.lbl_veh_title.setStyleSheet("font-size: 15px; font-weight: bold; color: #34d399;")
             self.lbl_veh_desc.setText(
                 f"<b>Arquitetura:</b> {throttle}<br>"
                 "<b>Procedimento Automático:</b> Alinhamento de Borboleta Eletrônica (Ajuste Básico - Grupo 060)."
             )
-            self.card_vehicle.setStyleSheet("background-color: #0f172a; border: 2px solid #34d399; border-radius: 8px; padding: 12px;")
+            self.card_vehicle.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #34d399; border-radius: 6px; padding: 12px;")
             self.radio_egas.setChecked(True)
             self._on_mode_changed(2, True)
             self.btn_start.setText("▶ Iniciar Alinhamento E-Gas (Grupo 060)")
@@ -473,7 +683,7 @@ class TBICalibrationWidget(QWidget):
             self.txt_explanation.setHtml(
                 "<b style='color: #38bdf8;'>Procedimento: Reset EEPROM Canal 00 (Magneti Marelli 1AVP)</b><br>"
                 "• <b>Ação:</b> Apaga as tabelas autoadaptativas de combustível e marcha lenta.<br>"
-                "• <b>Instrução:</b> Clique em Reset e aguarde a indexação mecânica do atuador de passo no ciclo de chave."
+                "• <b>Instrução:</b> Clique em Reset e execute as etapas do ciclo de chave abaixo."
             )
             self.box_1avp_wizard.setVisible(True)
             self.table_box.setVisible(False)
@@ -525,11 +735,10 @@ class TBICalibrationWidget(QWidget):
                 self.engine.connect(0x01)
                 self.owned_engine = True
 
-                # Aplica auto-identificação Bosch vs Marelli
                 self.apply_auto_detected_ecu()
             except Exception as e:
                 self.lbl_status.setText(f"Erro de conexão com a ECU: {e}")
-                self.lbl_status.setStyleSheet("background-color: #991b1b; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                self.lbl_status.setStyleSheet("background-color: #881337; color: #fecdd3; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
                 QMessageBox.critical(self, "Falha de Conexão", f"Não foi possível conectar ao módulo do Motor (0x01):\n{e}")
                 return
 
@@ -541,27 +750,27 @@ class TBICalibrationWidget(QWidget):
             try:
                 ok = self.engine.reset_factory_adaptations()
                 if ok:
-                    self.lbl_status.setText("✅ Reset de Autoadaptação Concluído na EEPROM! Siga os passos de ciclo de chave abaixo.")
-                    self.lbl_status.setStyleSheet("background-color: #065f46; color: #34d399; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                    self.lbl_status.setText("✅ Reset de Autoadaptação Concluído na EEPROM! Siga os passos abaixo.")
+                    self.lbl_status.setStyleSheet("background-color: #064e3b; color: #a7f3d0; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
                     self.box_1avp_wizard.setVisible(True)
                     QMessageBox.information(
                         self, "Reset Efetuado com Sucesso",
                         "Os parâmetros autoadaptativos da central foram resetados para o padrão de fábrica!\n\n"
-                        "Agora execute o ciclo de chave orientado nas 3 etapas abaixo para indexar o atuador de marcha lenta."
+                        "Agora execute o ciclo de chave orientado nas 3 etapas abaixo."
                     )
                 else:
                     self.lbl_status.setText("⚠️ Comando de reset rejeitado pela central.")
-                    self.lbl_status.setStyleSheet("background-color: #991b1b; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                    self.lbl_status.setStyleSheet("background-color: #881337; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
             except Exception as e:
                 self.lbl_status.setText(f"Falha ao resetar adaptação: {e}")
-                self.lbl_status.setStyleSheet("background-color: #991b1b; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                self.lbl_status.setStyleSheet("background-color: #881337; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
         else:
             if mode == 2:
                 self.active_group = 60
                 target_desc = "Alinhamento E-Gas (Grupo 060)"
             elif mode == 3:
                 self.active_group = 98
-                target_desc = "Alinhamento Bosch MP 9.0 / Semi-Eletrônico (Grupo 098)"
+                target_desc = "Alinhamento Bosch MP 9.0 (Grupo 098)"
             else:
                 self.active_group = 1
                 target_desc = "Trava de Ponto 9.0° APMS (Grupo 001)"
@@ -574,7 +783,7 @@ class TBICalibrationWidget(QWidget):
                 self.poll_timer.start(700)
             except Exception as e:
                 self.lbl_status.setText(f"Erro ao disparar Ajuste Básico: {e}")
-                self.lbl_status.setStyleSheet("background-color: #991b1b; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                self.lbl_status.setStyleSheet("background-color: #881337; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
 
     def _poll_basic_settings(self):
         if not self.engine:
@@ -592,14 +801,14 @@ class TBICalibrationWidget(QWidget):
                 val_str = str(f.get("value", ""))
                 if any(x in val_str for x in ("ADP. OK", "ADP OK", "I.O.", "I.O")):
                     self.lbl_status.setText("✅ Alinhamento de Borboleta Concluído com Sucesso! (I.O. / ADP. OK)")
-                    self.lbl_status.setStyleSheet("background-color: #065f46; color: #34d399; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                    self.lbl_status.setStyleSheet("background-color: #064e3b; color: #a7f3d0; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
                 elif any(x in val_str for x in ("ADP. RUN", "ADP RUN", "Lauft")):
-                    self.lbl_status.setText("⏳ Adaptação em andamento... (Lauft / ADP. RUN) Aguarde a conclusão...")
-                    self.lbl_status.setStyleSheet("background-color: #854d0e; color: #fde047; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+                    self.lbl_status.setText("⏳ Adaptação em andamento... (Lauft / ADP. RUN)")
+                    self.lbl_status.setStyleSheet("background-color: #78350f; color: #fde68a; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
                 elif "ERROR" in val_str:
                     self.lbl_status.setText("❌ Falha no alinhamento de borboleta (ERROR). Verifique bateria ou sujeira mecânica.")
-                    self.lbl_status.setStyleSheet("background-color: #991b1b; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
-        except Exception as e:
+                    self.lbl_status.setStyleSheet("background-color: #881337; color: white; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+        except Exception:
             self.poll_timer.stop()
 
     def _start_countdown(self, seconds: int, message: str):
@@ -638,7 +847,7 @@ class TBICalibrationWidget(QWidget):
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
         self.lbl_status.setText("Status: Procedimento encerrado.")
-        self.lbl_status.setStyleSheet("background-color: #1e293b; color: #94a3b8; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
+        self.lbl_status.setStyleSheet("background-color: #111724; color: #94a3b8; padding: 8px 12px; border-radius: 5px; font-weight: bold;")
 
 
 class TBICalibrationDialog(QDialog):
@@ -647,7 +856,7 @@ class TBICalibrationDialog(QDialog):
     def __init__(self, engine: Optional[KW1281Engine] = None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("🎯 Calibração de Borboleta (TBI) & Marcha Lenta")
-        self.resize(850, 680)
+        self.resize(860, 680)
         self.setStyleSheet(DARK_STYLE)
 
         layout = QVBoxLayout(self)
@@ -655,7 +864,7 @@ class TBICalibrationDialog(QDialog):
         layout.addWidget(self.widget)
 
         btn_close = QPushButton("Fechar Assistente")
-        btn_close.setStyleSheet("background-color: #334155; color: white;")
+        btn_close.setStyleSheet("background-color: #1e293b; color: white;")
         btn_close.clicked.connect(self.close_and_cleanup)
         layout.addWidget(btn_close)
 
@@ -672,21 +881,22 @@ class OpenVAGMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OpenVAG Desktop — Diagnóstico Automotivo KKL (VCDS-Lite Pro)")
-        self.resize(1024, 740)
+        self.setWindowTitle("OpenVAG — Estação de Diagnóstico Automotivo KKL (VAG KW1281)")
+        self.resize(1050, 760)
         self.setStyleSheet(DARK_STYLE)
 
         self.engine: Optional[KW1281Engine] = None
         self.dtc_db = DTCDatabase()
         self.logger = TelemetryLogger()
         self.autoscan_mgr = AutoScanManager()
+        self.autoscan_worker: Optional[AutoScanWorker] = None
 
         self.last_detected_port: Optional[str] = None
         self.known_ports_set = set()
 
         self.init_ui()
 
-        # Timer de detecção automática de portas USB / Hotplug (a cada 800ms)
+        # Watchdog de detecção automática Hotplug de portas USB / KKL
         self.hotplug_timer = QTimer(self)
         self.hotplug_timer.timeout.connect(self.check_usb_hotplug)
         self.hotplug_timer.start(800)
@@ -698,23 +908,28 @@ class OpenVAGMainWindow(QMainWindow):
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(12)
 
-        # Topo: Cabeçalho & Status do Hardware
+        # Header Superior
         header_layout = QHBoxLayout()
-        logo_label = QLabel("🚗 <b>OpenVAG</b> Desktop")
-        logo_label.setStyleSheet("font-size: 20px; color: #38bdf8;")
+        logo_label = QLabel("🚗 <b>OpenVAG</b> Pro")
+        logo_label.setStyleSheet("font-size: 19px; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px;")
         header_layout.addWidget(logo_label)
+
+        lbl_sub = QLabel("Estação de Diagnóstico KW1281")
+        lbl_sub.setStyleSheet("font-size: 12px; color: #64748b; margin-left: 6px;")
+        header_layout.addWidget(lbl_sub)
 
         header_layout.addStretch()
 
         self.status_badge = QLabel("⚪ AGUARDANDO CABO USB...")
-        self.status_badge.setStyleSheet("background-color: #334155; color: #94a3b8; padding: 5px 12px; border-radius: 5px; font-weight: bold;")
+        self.status_badge.setStyleSheet("background-color: #172033; color: #94a3b8; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 11px;")
         header_layout.addWidget(self.status_badge)
 
         self.port_combo = QComboBox()
+        self.port_combo.setMinimumWidth(180)
         self.refresh_ports()
         header_layout.addWidget(self.port_combo)
 
-        self.chk_autodetect = QCheckBox("Plug & Play (Auto)")
+        self.chk_autodetect = QCheckBox("Auto Plug & Play")
         self.chk_autodetect.setChecked(True)
         header_layout.addWidget(self.chk_autodetect)
 
@@ -725,9 +940,9 @@ class OpenVAGMainWindow(QMainWindow):
 
         main_layout.addLayout(header_layout)
 
-        # Banner de Notificação de Conexão Plug & Play
+        # Banner de Notificação
         self.banner_hotplug = QLabel("💡 Conecte o cabo VAG-COM KKL na porta USB para detecção automática instantânea.")
-        self.banner_hotplug.setStyleSheet("background-color: #1e293b; border-left: 4px solid #38bdf8; padding: 8px 12px; border-radius: 4px; color: #cbd5e1;")
+        self.banner_hotplug.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #0284c7; padding: 8px 12px; border-radius: 4px; color: #cbd5e1;")
         main_layout.addWidget(self.banner_hotplug)
 
         # Abas Principais
@@ -744,15 +959,14 @@ class OpenVAGMainWindow(QMainWindow):
         self.setup_tab_dtc_doctor()
         self.setup_tab_options()
 
-        self.tabs.addTab(self.tab_modules, "🔌 Selecionar Módulo")
-        self.tabs.addTab(self.tab_autoscan, "⚡ Auto-Scan")
+        self.tabs.addTab(self.tab_modules, "🔌 Módulos de Controle")
+        self.tabs.addTab(self.tab_autoscan, "⚡ Auto-Scan Veicular")
         self.tabs.addTab(self.tab_tbi, "🎯 Calibração de TBI & Marcha Lenta")
-        self.tabs.addTab(self.tab_dtc_doctor, "🩺 Doutor de Falhas")
-        self.tabs.addTab(self.tab_options, "⚙️ Opções & Teste de Cabo")
+        self.tabs.addTab(self.tab_dtc_doctor, "🩺 Doutor de Falhas (DTC)")
+        self.tabs.addTab(self.tab_options, "⚙️ Hardware & Linha K")
 
         main_layout.addWidget(self.tabs)
 
-        # Executa uma detecção inicial
         self.check_usb_hotplug(initial=True)
 
     def refresh_ports(self):
@@ -762,68 +976,52 @@ class OpenVAGMainWindow(QMainWindow):
         self.known_ports_set = set(p["device"] for p in ports)
 
         for p in ports:
-            tag = " ⭐ [Cabo KKL Detectado]" if p["is_likely_kkl"] else ""
+            tag = " ★ [KKL Plugado]" if p["is_likely_kkl"] else ""
             self.port_combo.addItem(f"{p['device']}{tag}", p["device"])
 
-        # Só adiciona opções de simulação se não houver porta física real conectada
         if not ports:
             self.port_combo.addItem("⚠️ Nenhum Cabo USB Detectado", "NONE")
             self.port_combo.addItem("🧪 Modo Bancada (Bosch MP 9.0)", "MOCK_BOSCH")
             self.port_combo.addItem("🧪 Modo Bancada (Marelli 1AVP)", "MOCK_1AVP")
 
-        # Restaura seleção se ainda existir
         if current_selection:
             idx = self.port_combo.findData(current_selection)
             if idx >= 0:
                 self.port_combo.setCurrentIndex(idx)
 
     def check_usb_hotplug(self, initial: bool = False):
-        """
-        Rotina periódica de watchdog para monitorar conexão e desconexão
-        de cabos USB/KKL (CH341 / FTDI) em tempo real.
-        """
         current_ports = list_available_ports()
         current_set = set(p["device"] for p in current_ports)
 
-        # Detecta se houve mudança nas portas seriais
         if current_set != self.known_ports_set or initial:
-            # Houve conexão ou desconexão física
-            newly_added = current_set - self.known_ports_set
-            removed = self.known_ports_set - current_set
-
             self.refresh_ports()
-
-            # Busca se o cabo KKL está plugado
             kkl_info = find_kkl_cable_port()
 
             if kkl_info:
                 port_name = kkl_info["device"]
                 desc = kkl_info.get("description", "Cabo KKL")
 
-                # Se a opção de autodetecção estiver marcada, seleciona automaticamente
                 if self.chk_autodetect.isChecked():
                     idx = self.port_combo.findData(port_name)
                     if idx >= 0:
                         self.port_combo.setCurrentIndex(idx)
 
-                self.status_badge.setText(f"🟢 CABO KKL CONECTADO ({port_name})")
-                self.status_badge.setStyleSheet("background-color: #065f46; color: #a7f3d0; padding: 5px 12px; border-radius: 5px; font-weight: bold;")
+                self.status_badge.setText(f"🟢 CABO KKL ONLINE ({port_name})")
+                self.status_badge.setStyleSheet("background-color: #064e3b; color: #a7f3d0; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 11px;")
                 self.banner_hotplug.setText(f"🔌 <b>Cabo VAG-COM KKL detectado na porta {port_name}!</b> ({desc}) Pronto para comunicação.")
-                self.banner_hotplug.setStyleSheet("background-color: #1e293b; border-left: 4px solid #10b981; padding: 8px 12px; border-radius: 4px; color: #a7f3d0;")
-
+                self.banner_hotplug.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #10b981; padding: 8px 12px; border-radius: 4px; color: #a7f3d0;")
                 self.last_detected_port = port_name
-
             else:
                 self.status_badge.setText("⚪ AGUARDANDO CABO USB...")
-                self.status_badge.setStyleSheet("background-color: #334155; color: #94a3b8; padding: 5px 12px; border-radius: 5px; font-weight: bold;")
+                self.status_badge.setStyleSheet("background-color: #172033; color: #94a3b8; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 11px;")
                 self.banner_hotplug.setText("💡 Conecte o cabo VAG-COM KKL na porta USB para detecção automática instantânea.")
-                self.banner_hotplug.setStyleSheet("background-color: #1e293b; border-left: 4px solid #38bdf8; padding: 8px 12px; border-radius: 4px; color: #cbd5e1;")
+                self.banner_hotplug.setStyleSheet("background-color: #0f1522; border: 1px solid #1e293b; border-left: 4px solid #0284c7; padding: 8px 12px; border-radius: 4px; color: #cbd5e1;")
                 self.last_detected_port = None
 
     def setup_tab_modules(self):
         layout = QVBoxLayout(self.tab_modules)
 
-        # 1. Card de Conexão Rápida com o Motor (Principal da Oficina)
+        # 1. Card de Conexão Rápida com o Motor
         card_engine = QGroupBox("Diagnóstico Principal — Injeção Eletrônica")
         card_engine_layout = QVBoxLayout(card_engine)
 
@@ -835,49 +1033,49 @@ class OpenVAGMainWindow(QMainWindow):
         card_engine_layout.addWidget(lbl_hint)
 
         btn_engine_hero = QPushButton("🚗 Conectar ao Módulo do Motor (01 - Engine)")
-        btn_engine_hero.setMinimumHeight(56)
-        btn_engine_hero.setStyleSheet("background-color: #0284c7; color: white; font-size: 16px; font-weight: bold; border-radius: 6px;")
+        btn_engine_hero.setMinimumHeight(54)
+        btn_engine_hero.setStyleSheet("background-color: #0284c7; color: white; font-size: 15px; font-weight: bold; border-radius: 5px;")
         btn_engine_hero.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_engine_hero.clicked.connect(lambda: self.open_controller(0x01))
         card_engine_layout.addWidget(btn_engine_hero)
 
         layout.addWidget(card_engine)
 
-        # 2. Outros Módulos Opcionais
-        group_common = QGroupBox("Outros Módulos Disponíveis (Opcional)")
+        # 2. Outros Módulos
+        group_common = QGroupBox("Outros Módulos Disponíveis")
         grid_common = QHBoxLayout(group_common)
 
         btn_abs = QPushButton("03 - Freios ABS\n(Anti-Lock Brakes)")
-        btn_abs.setMinimumHeight(52)
+        btn_abs.setMinimumHeight(48)
         btn_abs.clicked.connect(lambda: self.open_controller(0x03))
         grid_common.addWidget(btn_abs)
 
         btn_airbag = QPushButton("15 - Airbags\n(Safety Systems)")
-        btn_airbag.setMinimumHeight(52)
+        btn_airbag.setMinimumHeight(48)
         btn_airbag.clicked.connect(self.open_airbag_controller)
         grid_common.addWidget(btn_airbag)
 
         btn_cluster = QPushButton("17 - Painel Instrumentos\n(Kombiinstrument)")
-        btn_cluster.setMinimumHeight(52)
+        btn_cluster.setMinimumHeight(48)
         btn_cluster.clicked.connect(lambda: self.open_controller(0x17))
         grid_common.addWidget(btn_cluster)
 
         btn_immo = QPushButton("25 - Imobilizador\n(Immo Megamos/Kostal)")
-        btn_immo.setMinimumHeight(52)
+        btn_immo.setMinimumHeight(48)
         btn_immo.clicked.connect(lambda: self.open_controller(0x25))
         grid_common.addWidget(btn_immo)
 
         layout.addWidget(group_common)
 
         # 3. Endereço Direto
-        group_direct = QGroupBox("Endereço Direto (Avançado)")
+        group_direct = QGroupBox("Endereço Direto Hexadecimal")
         layout_direct = QHBoxLayout(group_direct)
-        layout_direct.addWidget(QLabel("Endereço Hexadecimal (ex: 01, 17, 25, 46):"))
+        layout_direct.addWidget(QLabel("Endereço Hex (ex: 01, 03, 17, 25, 46):"))
         self.txt_direct_addr = QLineEdit("01")
         self.txt_direct_addr.setMaximumWidth(80)
         layout_direct.addWidget(self.txt_direct_addr)
 
-        btn_direct_go = QPushButton("Conectar ao Endereço")
+        btn_direct_go = QPushButton("Conectar ao Módulo")
         btn_direct_go.clicked.connect(self.connect_direct_address)
         layout_direct.addWidget(btn_direct_go)
         layout_direct.addStretch()
@@ -907,6 +1105,10 @@ class OpenVAGMainWindow(QMainWindow):
         self.progress_scan.setValue(0)
         layout.addWidget(self.progress_scan)
 
+        self.lbl_scan_status = QLabel("Selecione o chassi e clique em Iniciar Auto-Scan.")
+        self.lbl_scan_status.setStyleSheet("color: #94a3b8; font-size: 12px;")
+        layout.addWidget(self.lbl_scan_status)
+
         self.table_scan = QTableWidget(0, 4)
         self.table_scan.setHorizontalHeaderLabels(["Endereço", "Nome do Módulo", "Status de Resposta", "Avarias (DTCs)"])
         self.table_scan.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -916,7 +1118,7 @@ class OpenVAGMainWindow(QMainWindow):
         layout = QVBoxLayout(self.tab_tbi)
         self.tbi_widget = TBICalibrationWidget(
             get_port_fn=lambda: self.port_combo.currentData(),
-            is_mock_fn=lambda: self.port_combo.currentData() == "MOCK",
+            is_mock_fn=lambda: str(self.port_combo.currentData()).startswith("MOCK"),
             parent=self
         )
         layout.addWidget(self.tbi_widget)
@@ -925,10 +1127,10 @@ class OpenVAGMainWindow(QMainWindow):
         layout = QVBoxLayout(self.tab_dtc_doctor)
 
         search_bar = QHBoxLayout()
-        search_bar.addWidget(QLabel("Consultar Código de Falha (VAG ou OBD2):"))
+        search_bar.addWidget(QLabel("Consultar Código de Falha (VAG ou OBD-II):"))
         self.txt_dtc_search = QLineEdit("")
-        self.txt_dtc_search.setPlaceholderText("Ex: 00515 ou P0340")
-        self.txt_dtc_search.setMaximumWidth(160)
+        self.txt_dtc_search.setPlaceholderText("Ex: 00513, 00515, P0321, P1570")
+        self.txt_dtc_search.setMaximumWidth(200)
         search_bar.addWidget(self.txt_dtc_search)
 
         btn_search = QPushButton("🔍 Analisar Falha")
@@ -940,38 +1142,40 @@ class OpenVAGMainWindow(QMainWindow):
 
         self.txt_dtc_details = QTextEdit()
         self.txt_dtc_details.setReadOnly(True)
-        self.txt_dtc_details.setStyleSheet("background-color: #1e293b; color: #f8fafc; font-size: 14px; padding: 12px;")
+        self.txt_dtc_details.setStyleSheet("background-color: #0f1522; color: #f8fafc; font-size: 13px; padding: 14px; border: 1px solid #1e293b; border-radius: 6px;")
         layout.addWidget(self.txt_dtc_details)
 
+        total_dtcs = len(self.dtc_db.database)
         self.txt_dtc_details.setHtml(
-            "<div style='text-align: center; padding: 40px; color: #64748b;'>"
-            "<h3 style='color: #94a3b8;'>🩺 Doutor de Falhas — Base de Conhecimento Técnico</h3>"
-            "<p>Nenhum código pesquisado no momento.<br><br>"
-            "👉 Conecte o cabo KKL ao carro para extrair os códigos de erro reais gravados na ECU,<br>"
-            "ou digite um código no campo acima para consultar os testes elétricos de chicote e multímetro.</p>"
+            f"<div style='text-align: center; padding: 36px; color: #64748b;'>"
+            f"<h3 style='color: #94a3b8;'>🩺 Doutor de Falhas — Base de Conhecimento Técnico ({total_dtcs} Falhas VAG Mapeadas)</h3>"
+            "<p>Digite um código no campo acima para consultar os sintomas, testes elétricos no chicote e procedimentos mecânicos de reparo.<br><br>"
+            "👉 Quando conectado ao carro, os códigos de avarias lidos na ECU são cruzados automaticamente com esta base.</p>"
             "</div>"
         )
 
     def setup_tab_options(self):
         layout = QVBoxLayout(self.tab_options)
 
-        group_port = QGroupBox("Teste e Diagnóstico da Interface Serial KKL")
+        group_port = QGroupBox("Diagnóstico e Teste da Interface Serial KKL")
         port_layout = QVBoxLayout(group_port)
 
-        port_layout.addWidget(QLabel("Driver suportado: <b>CH341S64.SYS / FTDI</b> (USB-to-Serial)"))
+        port_layout.addWidget(QLabel("Driver suportado: <b>CH341S64.SYS / FTDI FT232R</b> (USB-to-Serial K-Line)"))
         port_layout.addWidget(QLabel("Detecção Automática: <b>Ativada (Watchdog 800ms)</b>"))
+        port_layout.addWidget(QLabel("Protocolo: <b>ISO 9141-2 / KW1281 / KWP2000</b> (Slow Init 5 Baud com Paridade Ímpar)"))
 
-        btn_test_port = QPushButton("🔌 Executar Teste de Interface (Test Loopback / Baud)")
+        btn_test_port = QPushButton("🔌 Executar Teste de Loopback & Porta Serial")
         btn_test_port.clicked.connect(self.run_port_test)
         port_layout.addWidget(btn_test_port)
 
         layout.addWidget(group_port)
 
-        group_timings = QGroupBox("Ajustes de Temporização (VCDS.CFG)")
-        time_layout = QHBoxLayout(group_timings)
-        time_layout.addWidget(QLabel("Block Interval (BInt): 55 ms"))
-        time_layout.addWidget(QLabel("Char Interval (CInt): 1 ms"))
-        time_layout.addWidget(QLabel("Echo Delay (EDel): 500 ms"))
+        group_timings = QGroupBox("Parâmetros de Temporização da Linha K (VCDS.CFG)")
+        time_layout = QGridLayout(group_timings)
+        time_layout.addWidget(QLabel("Block Interval (BInt): <b>55 ms</b>"), 0, 0)
+        time_layout.addWidget(QLabel("Char Interval (CInt): <b>1 ms</b>"), 0, 1)
+        time_layout.addWidget(QLabel("Echo Delay (EDel): <b>500 ms</b>"), 1, 0)
+        time_layout.addWidget(QLabel("KP2 Delay: <b>25 ms</b>"), 1, 1)
         layout.addWidget(group_timings)
 
         layout.addStretch()
@@ -983,33 +1187,33 @@ class OpenVAGMainWindow(QMainWindow):
         info = self.dtc_db.lookup(code)
 
         html = f"""
-        <h2 style='color: #ef4444;'>Código VAG: {info['vag_code']} (OBD-II: {info['obd_code']})</h2>
-        <h3 style='color: #38bdf8;'>{info['component']}</h3>
-        <p><i>{info['description']}</i></p>
-        <hr style='border: 1px solid #334155;'>
+        <h2 style='color: #ef4444; margin-bottom: 2px;'>Código VAG: {info['vag_code']} (OBD-II: {info['obd_code']})</h2>
+        <h3 style='color: #38bdf8; margin-top: 2px;'>{info['component']}</h3>
+        <p style='color: #cbd5e1; font-size: 13px;'><i>{info['description']}</i></p>
+        <hr style='border: 1px solid #1e293b; margin: 12px 0;'>
         <h4 style='color: #f59e0b;'>Sintomas Prováveis no Veículo:</h4>
-        <ul>
+        <ul style='color: #e2e8f0; line-height: 1.5;'>
         """
         for sym in info.get("symptoms", []):
             html += f"<li>{sym}</li>"
         html += """
         </ul>
-        <h4 style='color: #22c55e;'>Procedimento de Teste com Multímetro no Chicote:</h4>
-        <ol>
+        <h4 style='color: #10b981; margin-top: 14px;'>Procedimento de Teste com Multímetro no Chicote / Sensor:</h4>
+        <ol style='color: #e2e8f0; line-height: 1.5;'>
         """
         for step in info.get("multimeter_test", []):
             html += f"<li>{step}</li>"
         html += f"""
         </ol>
-        <h4 style='color: #38bdf8;'>Ação Corretiva Mecânica:</h4>
-        <p>{info.get('mechanical_fix')}</p>
+        <h4 style='color: #38bdf8; margin-top: 14px;'>Ação Corretiva Mecânica:</h4>
+        <p style='color: #e2e8f0;'>{info.get('mechanical_fix')}</p>
         """
         self.txt_dtc_details.setHtml(html)
 
     def run_port_test(self):
         port_val = self.port_combo.currentData()
-        if port_val == "MOCK":
-            QMessageBox.information(self, "Teste de Interface", "Interface Simulação (Mock): Status OK!\nComunicação com emulador pronta.")
+        if str(port_val).startswith("MOCK"):
+            QMessageBox.information(self, "Teste de Interface", "Interface de Simulação (Mock): Status OK!\nComunicação com emulador pronta.")
             return
 
         try:
@@ -1038,31 +1242,33 @@ class OpenVAGMainWindow(QMainWindow):
         self.table_scan.setRowCount(0)
         self.progress_scan.setMaximum(len(modules))
         self.progress_scan.setValue(0)
+        self.btn_start_scan.setEnabled(False)
 
-        is_mock = (self.port_combo.currentData() == "MOCK")
+        port_val = self.port_combo.currentData()
+        is_mock = str(port_val).startswith("MOCK")
 
-        for idx, addr in enumerate(modules):
-            self.progress_scan.setValue(idx + 1)
-            name = self.autoscan_mgr.get_module_name(addr)
+        self.autoscan_worker = AutoScanWorker(self.autoscan_mgr, modules, port_val, is_mock)
+        self.autoscan_worker.progress_updated.connect(self._on_autoscan_progress)
+        self.autoscan_worker.module_scanned.connect(self._on_autoscan_row)
+        self.autoscan_worker.scan_completed.connect(self._on_autoscan_finished)
+        self.autoscan_worker.start()
 
-            if is_mock and addr == 0x01:
-                status = "OK — Respondendo"
-                dtcs = "00515 (Hall), 00525 (Lambda)"
-            elif is_mock:
-                status = "Sem resposta"
-                dtcs = "Nenhum"
-            else:
-                status = "Não detectado"
-                dtcs = "-"
+    def _on_autoscan_progress(self, current: int, total: int, module_name: str):
+        self.progress_scan.setValue(current)
+        self.lbl_scan_status.setText(f"Varrendo módulo {current}/{total}: {module_name}...")
 
-            row = self.table_scan.rowCount()
-            self.table_scan.insertRow(row)
-            self.table_scan.setItem(row, 0, QTableWidgetItem(f"0x{addr:02X}"))
-            self.table_scan.setItem(row, 1, QTableWidgetItem(name))
-            self.table_scan.setItem(row, 2, QTableWidgetItem(status))
-            self.table_scan.setItem(row, 3, QTableWidgetItem(dtcs))
+    def _on_autoscan_row(self, addr: int, name: str, status: str, dtcs: str):
+        row = self.table_scan.rowCount()
+        self.table_scan.insertRow(row)
+        self.table_scan.setItem(row, 0, QTableWidgetItem(f"0x{addr:02X}"))
+        self.table_scan.setItem(row, 1, QTableWidgetItem(name))
+        self.table_scan.setItem(row, 2, QTableWidgetItem(status))
+        self.table_scan.setItem(row, 3, QTableWidgetItem(dtcs))
 
-        QMessageBox.information(self, "Auto-Scan Concluído", f"Varredura de {len(modules)} módulos finalizada.")
+    def _on_autoscan_finished(self, total: int, responded: int):
+        self.btn_start_scan.setEnabled(True)
+        self.lbl_scan_status.setText(f"Auto-Scan Concluído: {responded} de {total} módulos responderam.")
+        QMessageBox.information(self, "Auto-Scan Concluído", f"Varredura finalizada!\n{responded} de {total} módulos responderam no chassi.")
 
     def open_controller(self, address: int):
         port_val = self.port_combo.currentData()
@@ -1095,6 +1301,11 @@ class OpenVAGMainWindow(QMainWindow):
 
 
 class ControllerDialog(QDialog):
+    """
+    Tela principal de diagnóstico de módulo (Controller Screen).
+    Possui multithreading assíncrono para o handshake, loop ativo de Keep-Alive (0x09)
+    para evitar timeout da ECU, osciloscópio multicanal com estatísticas e datalogger CSV.
+    """
 
     def __init__(self, address: int, port: str, is_mock: bool = False, mock_ecu_type: str = "BOSCH_MP90", parent=None):
         super().__init__(parent)
@@ -1106,11 +1317,15 @@ class ControllerDialog(QDialog):
         self.dtc_db = DTCDatabase()
 
         self.setWindowTitle(f"Módulo 0x{address:02X} — {MODULE_NAMES.get(address, 'Controlador')}")
-        self.resize(900, 650)
+        self.resize(920, 680)
         self.setStyleSheet(DARK_STYLE)
 
         self.measuring_timer = QTimer(self)
         self.measuring_timer.timeout.connect(self.poll_measuring_blocks)
+
+        # Timer de Keep-Alive periódico (350ms): evita queda de conexão quando o canal está ocioso
+        self.keepalive_timer = QTimer(self)
+        self.keepalive_timer.timeout.connect(self._send_keepalive)
 
         self.is_logging_csv = False
         self.csv_file = None
@@ -1127,9 +1342,9 @@ class ControllerDialog(QDialog):
         group_id = QGroupBox("Identificação do Módulo (VAG Controller Info)")
         id_layout = QVBoxLayout(group_id)
 
-        self.lbl_part_number = QLabel("VAG Number: Conectando...")
+        self.lbl_part_number = QLabel("VAG Number: Conectando via Linha K...")
         self.lbl_part_number.setStyleSheet("font-size: 14px; font-weight: bold; color: #38bdf8;")
-        self.lbl_component = QLabel("Component: Aguardando handshake...")
+        self.lbl_component = QLabel("Component: Executando 5-baud slow init...")
         self.lbl_coding = QLabel("Soft. Coding: -- | Work Shop Code: --")
 
         id_layout.addWidget(self.lbl_part_number)
@@ -1191,7 +1406,8 @@ class ControllerDialog(QDialog):
 
         layout.addWidget(splitter)
 
-        self.stack_box = QGroupBox("Painel de Diagnóstico em Tempo Real")
+        # Painel Live
+        self.stack_box = QGroupBox("Painel de Diagnóstico & Osciloscópio Digital")
         self.stack_layout = QVBoxLayout(self.stack_box)
 
         self.table_live = QTableWidget(4, 4)
@@ -1199,11 +1415,26 @@ class ControllerDialog(QDialog):
         self.table_live.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.stack_layout.addWidget(self.table_live)
 
+        # Osciloscópio com Barra de Seleção de Canal
+        scope_header = QHBoxLayout()
+        scope_header.addWidget(QLabel("Canal do Gráfico:"))
+        self.combo_scope_channel = QComboBox()
+        self.combo_scope_channel.addItem("Todos os Canais (Sobreposto)", 0)
+        self.combo_scope_channel.addItem("Canal 1 (Azul Cyan)", 1)
+        self.combo_scope_channel.addItem("Canal 2 (Verde Esmeralda)", 2)
+        self.combo_scope_channel.addItem("Canal 3 (Âmbar)", 3)
+        self.combo_scope_channel.addItem("Canal 4 (Rosa/Vermelho)", 4)
+        self.combo_scope_channel.currentIndexChanged.connect(self._on_scope_channel_changed)
+        scope_header.addWidget(self.combo_scope_channel)
+        scope_header.addStretch()
+        self.stack_layout.addLayout(scope_header)
+
         self.scope = LiveMiniScopeWidget()
         self.stack_layout.addWidget(self.scope)
 
         layout.addWidget(self.stack_box)
 
+        # Barra Inferior
         bottom_bar = QHBoxLayout()
         self.spin_group = QSpinBox()
         self.spin_group.setRange(0, 255)
@@ -1227,11 +1458,15 @@ class ControllerDialog(QDialog):
         bottom_bar.addStretch()
 
         btn_close = QPushButton("06 — Fechar Controlador / Voltar")
-        btn_close.setStyleSheet("background-color: #991b1b; color: white;")
+        btn_close.setStyleSheet("background-color: #881337; color: #fecdd3;")
         btn_close.clicked.connect(self.close_controller)
         bottom_bar.addWidget(btn_close)
 
         layout.addLayout(bottom_bar)
+
+    def _on_scope_channel_changed(self, idx: int):
+        self.scope.selected_channel = self.combo_scope_channel.currentData()
+        self.scope.update()
 
     def start_connection(self):
         pn_hint = "030-906-032-CP" if self.mock_ecu_type == "MARELLI_1AVP" else "1HS-908-258"
@@ -1251,12 +1486,10 @@ class ControllerDialog(QDialog):
             model = detected.get("model", "ECU")
             throttle = detected.get("throttle_type", "")
 
-            brand_tag = f"[{brand} {model}]"
             self.lbl_part_number.setText(f"Part Number VAG: {info.get('part_number', '030 906 027 AA')}")
             self.lbl_component.setText(f"🚗 Veículo: {brand} {model}  |  {info.get('component', '')}")
             self.lbl_coding.setText(f"Arquitetura: {throttle}  |  Coding: {info.get('coding', '00000')}  |  WSC: {info.get('wsc', 'WSC 00000')}")
 
-            # Personaliza os botões dinamicamente para o carro conectado
             if family == "BOSCH_MP90":
                 self.btn_tba.setText("🎯 Calibrar Borboleta (Grupo 098)")
                 self.btn_tba.setStyleSheet("background-color: #d97706; color: white; font-weight: bold; font-size: 13px;")
@@ -1269,9 +1502,21 @@ class ControllerDialog(QDialog):
                 self.btn_tba.setText("🎯 Calibrar Borboleta E-Gas (Grupo 060)")
                 self.btn_tba.setStyleSheet("background-color: #059669; color: white; font-weight: bold; font-size: 13px;")
                 self.btn_04.setText("04 — Ajuste Básico Geral")
+
+            # Ativa Keep-Alive Watchdog periódico para manter a sessão aberta
+            self.keepalive_timer.start(350)
+
         except Exception as e:
             QMessageBox.critical(self, "Falha de Conexão", f"Não foi possível conectar ao módulo 0x{self.address:02X}:\n{e}")
             self.reject()
+
+    def _send_keepalive(self):
+        """Envia ACK 0x09 periódico quando o canal está ocioso para evitar queda de sessão com a ECU."""
+        if self.engine and self.engine.connected and not self.measuring_timer.isActive():
+            try:
+                self.engine.send_ack()
+            except Exception:
+                pass
 
     def toggle_measuring(self):
         if self.measuring_timer.isActive():
@@ -1289,16 +1534,33 @@ class ControllerDialog(QDialog):
         fields = self.engine.read_measuring_group(group)
 
         self.table_live.setRowCount(len(fields))
+        scope_values = []
+        scope_labels = []
+        scope_units = []
+
         for r, f in enumerate(fields):
-            self.table_live.setItem(r, 0, QTableWidgetItem(f.get("name", f"Campo {r+1}")))
-            self.table_live.setItem(r, 1, QTableWidgetItem(str(f.get("value", "--"))))
-            self.table_live.setItem(r, 2, QTableWidgetItem(f.get("unit", "")))
-            self.table_live.setItem(r, 3, QTableWidgetItem(f.get("spec", "")))
+            name = f.get("name", f"Campo {r+1}")
+            val = f.get("value", "--")
+            unit = f.get("unit", "")
+            spec = f.get("spec", "")
 
-            if r == 0 and isinstance(f.get("value"), (int, float)):
-                self.scope.add_point(float(f["value"]))
+            self.table_live.setItem(r, 0, QTableWidgetItem(name))
+            self.table_live.setItem(r, 1, QTableWidgetItem(str(val)))
+            self.table_live.setItem(r, 2, QTableWidgetItem(unit))
+            self.table_live.setItem(r, 3, QTableWidgetItem(spec))
 
-        # Datalogger em Tempo Real para Teste de Rodagem
+            scope_labels.append(name)
+            scope_units.append(unit)
+            if isinstance(val, (int, float)):
+                scope_values.append(float(val))
+            else:
+                scope_values.append(0.0)
+
+        self.scope.set_channel_labels(scope_labels, scope_units)
+        if scope_values:
+            self.scope.add_channels_data(scope_values)
+
+        # Datalogger em Tempo Real
         if self.is_logging_csv and self.csv_writer:
             now_str = datetime.now().strftime("%H:%M:%S.%f")[:-3]
             row = [now_str, group]
@@ -1336,7 +1598,7 @@ class ControllerDialog(QDialog):
                 self.csv_sample_count = 0
 
                 self.btn_datalogger.setText("⏹ Finalizar Gravação")
-                self.btn_datalogger.setStyleSheet("background-color: #dc2626; color: white; font-weight: bold; padding: 6px 12px;")
+                self.btn_datalogger.setStyleSheet("background-color: #881337; color: white; font-weight: bold; padding: 6px 12px;")
                 self.lbl_log_status.setText("🔴 Gravando teste de rodagem...")
 
                 if not self.measuring_timer.isActive():
@@ -1372,6 +1634,8 @@ class ControllerDialog(QDialog):
 
     def close_controller(self):
         self.stop_datalogger()
+        if self.keepalive_timer.isActive():
+            self.keepalive_timer.stop()
         if self.measuring_timer.isActive():
             self.measuring_timer.stop()
         if self.engine:
@@ -1380,6 +1644,8 @@ class ControllerDialog(QDialog):
 
     def closeEvent(self, event):
         self.stop_datalogger()
+        if self.keepalive_timer.isActive():
+            self.keepalive_timer.stop()
         if self.measuring_timer.isActive():
             self.measuring_timer.stop()
         if self.engine:
@@ -1532,6 +1798,7 @@ class ControllerDialog(QDialog):
                     QMessageBox.warning(self, "Login", "Código de login rejeitado pela central.")
             except Exception as e:
                 QMessageBox.critical(self, "Erro", f"Falha no login: {e}")
+
 
 def run_desktop_app():
     app = QApplication(sys.argv)

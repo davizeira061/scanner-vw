@@ -136,7 +136,8 @@ class KLineSerialInterface:
         bit_duration = 0.200  # 200 ms por bit
 
         data_bits = [(address >> i) & 1 for i in range(7)]
-        parity = sum(data_bits) % 2
+        # ISO 9141-2: Paridade estritamente ÍMPAR (Odd Parity: sum(data_bits) + parity deve ser ímpar)
+        parity = 1 - (sum(data_bits) % 2)
 
         frame = [0] + data_bits + [parity, 1]
 
@@ -153,7 +154,7 @@ class KLineSerialInterface:
 
         time.sleep(0.050)
 
-        self.set_baudrate(9600)
+        self.set_baudrate(self.baudrate)
         self.purge()
         return True
 
@@ -165,7 +166,12 @@ class KLineSerialInterface:
         self.ser.flush()
 
         echo = self.ser.read(1)
-        if echo and echo[0] != b:
+        if not echo:
+            self.echo_mismatch_count += 1
+            logger.warning("Timeout aguardando eco do byte 0x%02X na Linha K (falhas: %d)", b, self.echo_mismatch_count)
+            if self.echo_mismatch_count >= 5:
+                raise RuntimeError("Falha de comunicação na Linha K: Sem retorno de eco do cabo KKL. Verifique conexão USB e alimentação 12V da tomada OBD2.")
+        elif echo[0] != b:
             self.echo_mismatch_count += 1
             logger.warning("Aviso de eco desalinhado: enviado 0x%02X, recebido 0x%02X (falhas: %d)", b, echo[0], self.echo_mismatch_count)
             if self.echo_mismatch_count >= 5:

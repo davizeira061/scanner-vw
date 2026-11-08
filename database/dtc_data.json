@@ -1,4 +1,38 @@
 {
+  "00513": {
+    "vag_code": "00513",
+    "obd_code": "P0321",
+    "component": "Sensor de Rotação da Árvore de Manivelas / RPM (G28)",
+    "description": "Sinal implausível, ausente ou fora de sincronismo.",
+    "symptoms": [
+      "Motor gira na partida mas não pega (sem centelha e sem pulso de bico)",
+      "Motor apaga de repente com o carro em movimento ou quente",
+      "Conta-giros do painel oscila ou não sobe durante a partida",
+      "Corte de injeção em rotações elevadas"
+    ],
+    "multimeter_test": [
+      "1. No sensor indutivo de 3 pinos: Medir resistência entre pinos 1 e 2 (deve estar entre 750 e 1000 Ohms a 20°C).",
+      "2. Entre qualquer pino e a carcaça/massa: Resistência deve ser infinita (isolamento perfeito).",
+      "3. Na escala de tensão alternada (AC Volts): Girar o motor no arranque. O sensor deve gerar entre 1.5V e 3.0V AC.",
+      "4. Verificar pino 3 (malha de blindagem terra contra ruídos de bobina)."
+    ],
+    "mechanical_fix": "Verificar distância do sensor para a roda fônica 60-2 dentes (entreferro de 0.8mm a 1.2mm), inspecionar se a ponta do sensor não acumulou limalha magnética e substituir o sensor caso a resistência esteja aberta."
+  },
+  "00514": {
+    "vag_code": "00514",
+    "obd_code": "P0322",
+    "component": "Sensor de Ponto Morto Superior (PMS - G4)",
+    "description": "Falha no sinal de referência de PMS.",
+    "symptoms": [
+      "Partida longa ou falha total de partida",
+      "Perda de sincronismo da injeção sequencial"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência do enrolamento (nominal ~800 a 1100 Ohms).",
+      "2. Verificar integridade do chicote até os pinos correspondentes na ECU."
+    ],
+    "mechanical_fix": "Verificar chaveta da engrenagem do virabrequim e folga axial do volante."
+  },
   "00515": {
     "vag_code": "00515",
     "obd_code": "P0340",
@@ -20,25 +54,39 @@
     ],
     "mechanical_fix": "Verificar se o distribuidor não está montado defasado em 180° ou dente adiantado/atrasado. Se o sinal não alternar, substituir a placa do sensor Hall ou o distribuidor completo."
   },
-  "00525": {
-    "vag_code": "00525",
-    "obd_code": "P0130",
-    "component": "Sensor de Oxigênio - Sonda Lambda (G39)",
-    "description": "Sinal implausível, sonda travada em mistura rica ou pobre, ou aquecedor inoperante.",
+  "00516": {
+    "vag_code": "00516",
+    "obd_code": "P0510",
+    "component": "Interruptor de Posição Fechada de Marcha Lenta (F60)",
+    "description": "Interruptor de batente de marcha lenta em circuito aberto ou travado.",
     "symptoms": [
-      "Cheiro forte de combustível no escapamento",
-      "Consumo excessivo de combustível",
-      "Falhas em acelerações rápidas ou marcha lenta oscilando",
-      "Fumaça escura no escape"
+      "Marcha lenta acelerada (1200-1500 RPM)",
+      "Cut-off (corte em desaceleração) não aciona",
+      "Trompancos ao tirar o pé do acelerador"
     ],
     "multimeter_test": [
-      "1. Aquecer o motor até a temperatura operacional (ventoinha armando, ECT > 85°C).",
-      "2. Nos fios brancos (aquecedor da sonda de 4 fios): Medir resistência (deve estar entre 2 a 14 Ohms). Medir alimentação de 12V do relé de bomba.",
-      "3. No fio preto (Sinal da sonda) contra o fio cinza/massa: A tensão deve oscilar rapidamente entre 0.1V (pobre) e 0.9V (rica) a cada 1 a 2 segundos em marcha lenta.",
-      "4. Se a tensão ficar travada abaixo de 0.2V: Mistura pobre ou entrada de ar falsa no coletor/mangueiras de vácuo.",
-      "5. Se a tensão ficar travada acima de 0.8V: Bico injetor estanque/gotejando ou excesso de pressão na linha de combustível."
+      "1. Com borboleta fechada: Continuidade entre terminais do contato de repouso (resistência < 1.0 Ohm).",
+      "2. Ao acelerar levemente: O circuito deve abrir imediatamente (resistência infinita)."
     ],
-    "mechanical_fix": "Testar estanqueidade do bico injetor, verificar pressão da bomba (deve ser 3.0 bar na 1AVP multiponto), inspecionar mangueira do sensor MAP e trocar a sonda se não oscilar."
+    "mechanical_fix": "Regular batente do cabo do acelerador para não manter a borboleta enforcada e limpar batente de repouso do corpo de borboleta."
+  },
+  "00518": {
+    "vag_code": "00518",
+    "obd_code": "P0120",
+    "component": "Sensor de Posição da Borboleta (TPS - G69)",
+    "description": "Potenciômetro da borboleta com pista desgastada ou curto-circuito.",
+    "symptoms": [
+      "Falhas em aceleração intermediária",
+      "Picos ou quedas bruscas de potência ao manter o pé fixo no acelerador",
+      "Não reconhece condição de marcha lenta fechada (TPS > 2%)"
+    ],
+    "multimeter_test": [
+      "1. Com chave ligada, medir tensão de alimentação de 5.0V no pino de entrada.",
+      "2. No pino de sinal, com borboleta totalmente fechada: Deve medir entre 0.4V e 0.9V.",
+      "3. Abrir a borboleta manualmente de forma lenta e contínua até o final: A tensão deve subir suavemente até cerca de 4.5V a 4.8V, sem saltos, quedas ou interrupções.",
+      "4. Se a leitura saltar para 0V ou 5V no meio do curso, há pista resistiva rompida."
+    ],
+    "mechanical_fix": "Ajustar o batente mecânico do cabo do acelerador (não pode ficar enforcado) e substituir o potenciômetro da borboleta."
   },
   "00519": {
     "vag_code": "00519",
@@ -46,7 +94,7 @@
     "component": "Sensor de Pressão Absoluta no Coletor (MAP - G71)",
     "description": "Sinal do sensor MAP fora da faixa de tolerância ou implausível com TPS.",
     "symptoms": [
-      "Motor 'amarrado' em subidas ou arrancadas",
+      "Motor amarrado em subidas ou arrancadas",
       "Marcha lenta oscilando violentamente",
       "Buraco na aceleração ao pisar no acelerador",
       "Motor apaga ao frear ou desacelerar"
@@ -80,24 +128,6 @@
     ],
     "mechanical_fix": "Substituir o sensor de temperatura do motor (conector azul na carcaça da válvula termostática do Gol) e verificar sangria do sistema para evitar bolhas de ar sobre o sensor."
   },
-  "00518": {
-    "vag_code": "00518",
-    "obd_code": "P0120",
-    "component": "Sensor de Posição da Borboleta (TPS - G69)",
-    "description": "Potenciômetro da borboleta com pista desgastada ou curto-circuito.",
-    "symptoms": [
-      "Falhas em aceleração intermediária",
-      "Picos ou quedas bruscas de potência ao manter o pé fixo no acelerador",
-      "Não reconhece condição de marcha lenta fechada (TPS > 2%)"
-    ],
-    "multimeter_test": [
-      "1. Com chave ligada, medir tensão de alimentação de 5.0V no pino de entrada.",
-      "2. No pino de sinal, com borboleta totalmente fechada: Deve medir entre 0.4V e 0.9V.",
-      "3. Abrir a borboleta manualmente de forma lenta e contínua até o final: A tensão deve subir suavemente até cerca de 4.5V a 4.8V, sem saltos, quedas ou interrupções.",
-      "4. Se a leitura saltar para 0V ou 5V no meio do curso, há pista resistiva rompida."
-    ],
-    "mechanical_fix": "Ajustar o batente mecânico do cabo do acelerador (não pode ficar enforcado) e substituir o potenciômetro da borboleta."
-  },
   "00523": {
     "vag_code": "00523",
     "obd_code": "P0110",
@@ -115,6 +145,58 @@
     ],
     "mechanical_fix": "Limpar resíduos de óleo de respiro na ponta do sensor com limpa-contato ou substituir o sensor integrado MAP/IAT."
   },
+  "00524": {
+    "vag_code": "00524",
+    "obd_code": "P0325",
+    "component": "Sensor de Detonação 1 (Knock Sensor - G61)",
+    "description": "Sinal elétrico fraco, ausente ou curto-circuito.",
+    "symptoms": [
+      "Batida de pino (detonação metálica) em subidas ou acelerações com carga",
+      "Perda de potência por atraso conservador de ignição adotado pela ECU",
+      "Consumo elevado de combustível"
+    ],
+    "multimeter_test": [
+      "1. Desconectar o conector do sensor: Medir resistência entre os pinos 1 e 2 (deve ser circuito aberto / > 1 MegaOhm). Se der continuidade, está em curto.",
+      "2. Na escala milivolts AC (mV AC): Bater levemente com uma chave de boca no bloco perto do sensor; o multímetro deve registrar picos de 20 a 50 mV AC.",
+      "3. Medir continuidade da malha de aterramento do conector."
+    ],
+    "mechanical_fix": "Instalar o sensor de detonação com torquímetro exatamente a 20 Nm (2.0 kgfm). Apertar de menos causa falta de sinal; apertar demais destrói o cristal piezoelétrico interno."
+  },
+  "00525": {
+    "vag_code": "00525",
+    "obd_code": "P0130",
+    "component": "Sensor de Oxigênio - Sonda Lambda (G39)",
+    "description": "Sinal implausível, sonda travada em mistura rica ou pobre, ou aquecedor inoperante.",
+    "symptoms": [
+      "Cheiro forte de combustível no escapamento",
+      "Consumo excessivo de combustível",
+      "Falhas em acelerações rápidas ou marcha lenta oscilando",
+      "Fumaça escura no escape"
+    ],
+    "multimeter_test": [
+      "1. Aquecer o motor até a temperatura operacional (ventoinha armando, ECT > 85°C).",
+      "2. Nos fios brancos (aquecedor da sonda de 4 fios): Medir resistência (deve estar entre 2 a 14 Ohms). Medir alimentação de 12V do relé de bomba.",
+      "3. No fio preto (Sinal da sonda) contra o fio cinza/massa: A tensão deve oscilar rapidamente entre 0.1V (pobre) e 0.9V (rica) a cada 1 a 2 segundos em marcha lenta.",
+      "4. Se a tensão ficar travada abaixo de 0.2V: Mistura pobre ou entrada de ar falsa no coletor/mangueiras de vácuo.",
+      "5. Se a tensão ficar travada acima de 0.8V: Bico injetor estanque/gotejando ou excesso de pressão na linha de combustível."
+    ],
+    "mechanical_fix": "Testar estanqueidade do bico injetor, verificar pressão da bomba (deve ser 3.0 bar na 1AVP multiponto), inspecionar mangueira do sensor MAP e trocar a sonda se não oscilar."
+  },
+  "00528": {
+    "vag_code": "00528",
+    "obd_code": "P1101",
+    "component": "Sensor de Pressão Barométrica (F96)",
+    "description": "Sinal de altitude / pressão ambiente implausível.",
+    "symptoms": [
+      "Mistura excessivamente rica ou pobre em variações de altitude",
+      "Lenta irregular"
+    ],
+    "multimeter_test": [
+      "1. Medir tensão de saída em nível do mar: aprox. 4.0V a 4.6V.",
+      "2. Conferir linha de alimentação de 5V da ECU."
+    ],
+    "mechanical_fix": "Geralmente integrado na placa da ECU em centrais mais antigas ou no sensor MAP."
+  },
   "00532": {
     "vag_code": "00532",
     "obd_code": "P0562",
@@ -131,5 +213,364 @@
       "3. Com motor ligado em marcha lenta e luzes acesas: Alternador deve fornecer entre 13.8V e 14.4V."
     ],
     "mechanical_fix": "Verificar aterramentos do bloco do motor e da bateria ao chassi (malha de terra do Gol), testar regulador de voltagem do alternador e estado da bateria."
+  },
+  "00533": {
+    "vag_code": "00533",
+    "obd_code": "P0505",
+    "component": "Regulação de Marcha Lenta (Limite de Adaptação Ultrapassado)",
+    "description": "A ECU tentou ajustar o atuador de marcha lenta até o batente máximo ou mínimo sem sucesso.",
+    "symptoms": [
+      "Motor morre em cruzamentos ao pisar na embreagem",
+      "Marcha lenta oscila entre 600 e 1300 RPM",
+      "Motor não compensa a rotação ao ligar o ar-condicionado ou faróis"
+    ],
+    "multimeter_test": [
+      "1. Na 1AVP (motor de passo 4 vias): Medir resistência das bobinas A (pinos 1-2) e B (pinos 3-4): Deve medir ~45 a 65 Ohms em cada bobina.",
+      "2. Na Bosch MP 9.0 (motor DC integrado): Medir alimentação nos pinos 1 e 2 do atuador ao ligar a chave.",
+      "3. Inspecionar se não há entrada de ar falso por junta do coletor ou servofreio."
+    ],
+    "mechanical_fix": "Descarbonizar o corpo de borboleta (TBI), desobstruir galerias de marcha lenta, e executar o procedimento de calibração TBA (Grupo 098 para Bosch MP 9.0 ou Reset Canal 00 para 1AVP)."
+  },
+  "00537": {
+    "vag_code": "00537",
+    "obd_code": "P1111",
+    "component": "Regulação Lambda - Limite Superior ou Inferior Atingido",
+    "description": "A central atingiu o limite máximo de enriquecimento (+25%) ou empobrecimento (-25%).",
+    "symptoms": [
+      "Consumo altíssimo ou falhas por falta de combustível",
+      "Motor grila em retomadas de velocidade"
+    ],
+    "multimeter_test": [
+      "1. Verificar pressão e vazão da linha de combustível (manômetro na flauta: 3.0 bar estático).",
+      "2. Testar estanqueidade de injetores (bico pingando causa limite inferior / mistura rica).",
+      "3. Verificar com máquina de fumaça ou água e sabão entradas de ar falso após o TBI."
+    ],
+    "mechanical_fix": "Corrigir furos em mangueiras de respiro do óleo (blow-by), mangueira do hidrovácuo, trocar filtro de combustível ou regular pressão de combustível."
+  },
+  "00540": {
+    "vag_code": "00540",
+    "obd_code": "P0330",
+    "component": "Sensor de Detonação 2 (G66)",
+    "description": "Sinal do segundo sensor de detonação ausente ou implausível.",
+    "symptoms": [
+      "Atraso geral de avanço de ignição",
+      "Motor sem rendimento em rotações altas"
+    ],
+    "multimeter_test": [
+      "1. Medir isolamento contra massa (> 1 MOhm).",
+      "2. Medir geração de tensão piezoelétrica sob impacto leve."
+    ],
+    "mechanical_fix": "Apertar o parafuso com torque exato de 20 Nm no bloco."
+  },
+  "00543": {
+    "vag_code": "00543",
+    "obd_code": "P0219",
+    "component": "Rotação Máxima Ultrapassada (Over-rev)",
+    "description": "O motor atingiu rotação superior ao limite programado (geralmente redução errada de marcha).",
+    "symptoms": [
+      "Falha gravada na memória da ECU após redução de marcha severa",
+      "Risco de flutuação de válvulas e colisão mecânica"
+    ],
+    "multimeter_test": [
+      "Não é defeito elétrico. Ler parâmetros do bloco de medição para verificar integridade de rotação."
+    ],
+    "mechanical_fix": "Efetuar teste de compressão e vazão de cilindros para garantir que nenhuma válvula foi entortada por sobregiro."
+  },
+  "00545": {
+    "vag_code": "00545",
+    "obd_code": "P1626",
+    "component": "Conexão Elétrica Motor / Transmissão",
+    "description": "Sinal de comunicação ausente entre a injeção e o módulo de transmissão.",
+    "symptoms": [
+      "Trocas de marcha ásperas ou trancos na transmissão automática"
+    ],
+    "multimeter_test": [
+      "1. Verificar continuidade da linha de comunicação CAN / sinal de torque entre ECM e TCM."
+    ],
+    "mechanical_fix": "Inspecionar chicote elétrico de interligação e aterramentos da transmissão."
+  },
+  "00561": {
+    "vag_code": "00561",
+    "obd_code": "P1127",
+    "component": "Adaptação da Mistura de Combustível (STFT / LTFT)",
+    "description": "Correção adaptativa de combustível no batente máximo.",
+    "symptoms": [
+      "Dificuldade de partida",
+      "Fumaça preta e odor forte de combustível",
+      "Lenta quadrada e engasgos em baixa rotação"
+    ],
+    "multimeter_test": [
+      "1. Medir sinal da sonda lambda (G39) em tempo real.",
+      "2. Medir resistência elétrica dos 4 injetores (deve ser ~14 a 17 Ohms em alta impedância)."
+    ],
+    "mechanical_fix": "Fazer limpeza e equalização dos bicos injetores na máquina de ultrassom e conferir pressão da bomba de combustível."
+  },
+  "00609": {
+    "vag_code": "00609",
+    "obd_code": "P1355",
+    "component": "Saída de Ignição 1 (Bobina Cilindros 1 e 4 / Módulo N157)",
+    "description": "Circuito aberto ou curto-circuito no primário da bobina de ignição.",
+    "symptoms": [
+      "Motor falhando em 2 cilindros (cilindros 1 e 4 sem centelha)",
+      "Trepidação extrema do motor e falta total de força",
+      "Cheiro forte de combustível cru no escape"
+    ],
+    "multimeter_test": [
+      "1. No conector da bobina de ignição dupla (4 pinos): Medir tensão de 12V no pino de alimentação (Linha 15 pós-chave).",
+      "2. Medir continuidade do fio de aterramento ao chassi (< 0.5 Ohm).",
+      "3. No pino de disparo do Cilindro 1/4 vindo da ECU: Com lâmpada de teste LED ou osciloscópio, dar partida no motor; o LED deve piscar indicando pulsos de aterramento da ECU.",
+      "4. Na bobina desconectada: Medir resistência do enrolamento secundário entre as saídas das torres 1 e 4 (deve medir ~4.000 a 6.000 Ohms)."
+    ],
+    "mechanical_fix": "Substituir a bobina de ignição (trinca na carcaça plástica causa centelhamento para a massa). Inspecionar cabos de vela (resistência máxima de 5 kOhms por cabo)."
+  },
+  "00610": {
+    "vag_code": "00610",
+    "obd_code": "P1356",
+    "component": "Saída de Ignição 2 (Bobina Cilindros 2 e 3 / Módulo N158)",
+    "description": "Circuito aberto ou curto-circuito no canal de ignição dos cilindros 2 e 3.",
+    "symptoms": [
+      "Motor falhando em 2 cilindros (cilindros 2 e 3 inoperantes)",
+      "Perda de potência severa e motor vibrando muito"
+    ],
+    "multimeter_test": [
+      "1. Medir disparo de pulso de sinal vindo da ECU no pino de controle do Cilindro 2/3.",
+      "2. Medir resistência secundária entre as torres 2 e 3 da bobina (~4.000 a 6.000 Ohms)."
+    ],
+    "mechanical_fix": "Substituir bobina de ignição dupla e conferir integridade do chicote entre a ECU e a bobina."
+  },
+  "00670": {
+    "vag_code": "00670",
+    "obd_code": "P1510",
+    "component": "Sensor de Posição do Atuador da Marcha Lenta (G88)",
+    "description": "Potenciômetro interno de feedback do atuador elétrico de marcha lenta (Bosch MP 9.0) com leitura fora da faixa.",
+    "symptoms": [
+      "Marcha lenta oscilando sem controle ou acelerada",
+      "Falha ao ligar ar-condicionado (motor apaga)",
+      "Não permite alinhamento TBA no Grupo 098 (retorna ERROR)"
+    ],
+    "multimeter_test": [
+      "1. No conector do atuador de marcha lenta da Bosch MP 9.0: Medir alimentação de 5V nos terminais do potenciômetro G88.",
+      "2. Medir resistência do potenciômetro de feedback: Deve variar suavemente conforme a haste mecânica se desloca.",
+      "3. Medir resistência do motor elétrico DC interno (pinos 1 e 2): Deve medir entre 3 e 15 Ohms."
+    ],
+    "mechanical_fix": "Descarbonizar engrenagens plásticas do motor de marcha lenta integrado ou substituir o corpo de borboleta completo caso a trilha resistiva interna esteja gasta."
+  },
+  "01165": {
+    "vag_code": "01165",
+    "obd_code": "P1559",
+    "component": "Unidade de Controle da Borboleta (J338) - Adaptação Não Efetuada",
+    "description": "O batente mecânico da borboleta não está alinhado na memória da ECU.",
+    "symptoms": [
+      "Marcha lenta instável após desconectar a bateria ou limpar o TBI",
+      "Respostas lentas do acelerador"
+    ],
+    "multimeter_test": [
+      "1. Medir tensão da bateria (> 11.5V com motor desligado).",
+      "2. Verificar se não há interferência mecânica travando a borboleta."
+    ],
+    "mechanical_fix": "Executar o Ajuste Básico de TBA no OpenVAG: Grupo 098 para Bosch MP 9.0 ou Grupo 060 para Bosch ME 7.x até acusar ADP. OK."
+  },
+  "01247": {
+    "vag_code": "01247",
+    "obd_code": "P0444",
+    "component": "Válvula de Purga do Cânister (N80)",
+    "description": "Circuito aberto ou curto-circuito na eletroválvula do cânister.",
+    "symptoms": [
+      "Cheiro forte de vapores de gasolina perto do cofre ou paralama",
+      "Marcha lenta ligeiramente instável com tanque cheio"
+    ],
+    "multimeter_test": [
+      "1. Desconectar o plugue de 2 vias da válvula N80.",
+      "2. Medir resistência da bobina solenoide da válvula: Deve estar entre 22 e 30 Ohms.",
+      "3. No conector: Verificar alimentação de 12V da linha do relé de bomba."
+    ],
+    "mechanical_fix": "Testar se a válvula veda quando sem energia (soprar com a boca; não deve passar ar). Se passar ar livre, a válvula está travada aberta: substituir a N80."
+  },
+  "01249": {
+    "vag_code": "01249",
+    "obd_code": "P0201",
+    "component": "Válvula Injetora Cilindro 1 (N30)",
+    "description": "Circuito aberto ou curto na linha de acionamento do injetor 1.",
+    "symptoms": [
+      "Motor falhando cilindro 1 continuamente",
+      "Trepidação forte e perda severa de potência"
+    ],
+    "multimeter_test": [
+      "1. Desconectar o conector do bico injetor 1.",
+      "2. Medir resistência nos 2 pinos do bico: Deve medir entre 12 e 17 Ohms.",
+      "3. No conector com chave ligada: Um pino deve ter 12V fixo.",
+      "4. Com caneta de polaridade LED no outro pino: Ao girar o arranque, deve pulsar negativo."
+    ],
+    "mechanical_fix": "Trocar conector do bico injetor ressecado ou substituir o eletroinjetor."
+  },
+  "01250": {
+    "vag_code": "01250",
+    "obd_code": "P0202",
+    "component": "Válvula Injetora Cilindro 2 (N31)",
+    "description": "Circuito elétrico do injetor do cilindro 2 com falha.",
+    "symptoms": [
+      "Motor funcionando em 3 cilindros"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência da bobina do injetor: 12 a 17 Ohms.",
+      "2. Verificar alimentação 12V e pulso de massa da ECU."
+    ],
+    "mechanical_fix": "Verificar continuidade do chicote até o conector da ECU e trocar o bico se a bobina estiver aberta."
+  },
+  "01251": {
+    "vag_code": "01251",
+    "obd_code": "P0203",
+    "component": "Válvula Injetora Cilindro 3 (N32)",
+    "description": "Falha no circuito do injetor do cilindro 3.",
+    "symptoms": [
+      "Falha contínua no cilindro 3"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência do injetor: 12 a 17 Ohms.",
+      "2. Testar pulso da injeção com lâmpada de teste rápida."
+    ],
+    "mechanical_fix": "Limpar contatos do plugue e substituir injetor avariado."
+  },
+  "01252": {
+    "vag_code": "01252",
+    "obd_code": "P0204",
+    "component": "Válvula Injetora Cilindro 4 (N33)",
+    "description": "Falha no circuito do injetor do cilindro 4.",
+    "symptoms": [
+      "Falha contínua no cilindro 4"
+    ],
+    "multimeter_test": [
+      "1. Medir resistência do injetor: 12 a 17 Ohms.",
+      "2. Testar pulso de comando da ECU."
+    ],
+    "mechanical_fix": "Substituir injetor ou recuperar fiação rompida no chicote."
+  },
+  "01259": {
+    "vag_code": "01259",
+    "obd_code": "P1500",
+    "component": "Relé da Bomba de Combustível (J17)",
+    "description": "Sinal de comando do relé da bomba em circuito aberto ou curto à massa.",
+    "symptoms": [
+      "Bomba de combustível não pressuriza ao ligar a chave",
+      "Motor não pega por falta de pressão de combustível",
+      "Bomba não desliga após 2 segundos sem partida"
+    ],
+    "multimeter_test": [
+      "1. Retirar o relé de bomba na caixa de fusíveis.",
+      "2. No soquete: Verificar linha 30 com 12V constante da bateria.",
+      "3. No pino de disparo da bobina do relé: A ECU envia massa (0V) por 2 segundos ao ligar a chave.",
+      "4. Na bancada: Aplicar 12V nos pinos 85 e 86 da bobina do relé; os pinos 30 e 87 devem fechar contato com continuidade perfeita (< 0.2 Ohm)."
+    ],
+    "mechanical_fix": "Substituir o relé da bomba de combustível ou refazer soldas frias nos contatos internos da placa do relé."
+  },
+  "01314": {
+    "vag_code": "01314",
+    "obd_code": "U0100",
+    "component": "Módulo de Controle do Motor (ECM / Central de Injeção)",
+    "description": "Ausência de comunicação com a central do motor pelo barramento de diagnóstico ou Gateway CAN.",
+    "symptoms": [
+      "Painel de instrumentos com luz de injeção acesa ou piscando",
+      "Módulos de ABS e Airbag não conseguem ler dados do motor",
+      "Motor não pega ou entra em emergência"
+    ],
+    "multimeter_test": [
+      "1. Medir alimentação principal 12V da ECU nos pinos pós-chave e direto de bateria.",
+      "2. Medir todos os aterramentos da ECU (queda de tensão contra polo negativo da bateria deve ser < 0.1V).",
+      "3. Medir continuidade da Linha K (pino 7 OBD) até o pino correspondente no conector da ECU."
+    ],
+    "mechanical_fix": "Verificar fusíveis da injeção, relé principal de alimentação da central e estado dos pinos do conector da injeção contra oxidação/zinabre."
+  },
+  "01316": {
+    "vag_code": "01316",
+    "obd_code": "U0121",
+    "component": "Módulo de Controle dos Freios ABS (J104)",
+    "description": "Sem comunicação com o controlador de freios ABS.",
+    "symptoms": [
+      "Luz do ABS acesa permanentemente no painel",
+      "Freios operando apenas no sistema hidráulico convencional"
+    ],
+    "multimeter_test": [
+      "1. Verificar os fusíveis de alta corrente do ABS na tampa da bateria ou caixa de fusíveis.",
+      "2. Medir alimentação e terra no conector principal do bloco hidráulico ABS."
+    ],
+    "mechanical_fix": "Verificar chicote elétrico dos sensores de roda e conexão elétrica da bomba do ABS."
+  },
+  "01317": {
+    "vag_code": "01317",
+    "obd_code": "U0155",
+    "component": "Módulo de Controle do Painel de Instrumentos (J285)",
+    "description": "Sem comunicação com o painel de instrumentos.",
+    "symptoms": [
+      "Ponteiros travados ou inoperantes",
+      "Luz do imobilizador piscando"
+    ],
+    "multimeter_test": [
+      "1. Medir alimentação pós-chave do painel.",
+      "2. Verificar aterramento do cluster de instrumentos."
+    ],
+    "mechanical_fix": "Ressoldar conectores azul e verde na placa de circuito impresso traseira do painel."
+  },
+  "16955": {
+    "vag_code": "16955",
+    "obd_code": "P0571",
+    "component": "Interruptor da Luz de Freio (F / F47)",
+    "description": "Sinal implausível entre o interruptor de freio e o interruptor de corte da injeção.",
+    "symptoms": [
+      "Luz de advertência EPC acesa no painel",
+      "Piloto automático desativado",
+      "Corte de aceleração ao frear"
+    ],
+    "multimeter_test": [
+      "1. No interruptor duplo de freio sobre o pedal (4 pinos):",
+      "   - Pinos 1 e 4 (luzes de freio): Circuito normalmente aberto, fecha com pedal pressionado.",
+      "   - Pinos 2 e 3 (sinal para ECU): Circuito normalmente fechado, abre com pedal pressionado.",
+      "2. Ambos os contatos devem comutar exatamente no mesmo milissegundo."
+    ],
+    "mechanical_fix": "Substituir o interruptor de freio do pedal (ajustar a catraca plástica de regulagem de altura do pino)."
+  },
+  "17978": {
+    "vag_code": "17978",
+    "obd_code": "P1570",
+    "component": "Módulo do Motor Bloqueado pelo Imobilizador",
+    "description": "A central de injeção recebeu ordem de bloqueio da central de imobilizador (Immo).",
+    "symptoms": [
+      "O motor dá partida, pega por exatos 1 a 2 segundos e apaga imediatamente",
+      "Luz da chave/carro piscando no painel"
+    ],
+    "multimeter_test": [
+      "1. Desconectar o conector da antena indutiva no miolo da chave (leitora do chip transponder).",
+      "2. Medir resistência da bobina de leitura da antena: Deve estar entre 20 e 40 Ohms.",
+      "3. Verificar chicote de comunicação entre o módulo imobilizador e o pino correspondente da injeção."
+    ],
+    "mechanical_fix": "Verificar se o chip transponder (Megamos Crypto / ID48) está presente dentro da chave plástica, refazer reaperto no plugue da bobina leitora do tambor de ignição ou efetuar reapresentação da chave no módulo de imobilizador (endereço 25)."
+  },
+  "17987": {
+    "vag_code": "17987",
+    "obd_code": "P1579",
+    "component": "Unidade de Comando da Borboleta (J338) - Adaptação Não Concluída",
+    "description": "Procedimento de ajuste básico de borboleta interrompido ou tensão de bateria insuficiente.",
+    "symptoms": [
+      "Marcha lenta desregulada e aceleração irregular"
+    ],
+    "multimeter_test": [
+      "1. Conferir se a bateria possui no mínimo 12.0V.",
+      "2. Conferir se a temperatura do motor está entre 10°C e 90°C."
+    ],
+    "mechanical_fix": "Conectar carregador de bateria auxiliar, ligar a chave com motor desligado e executar novamente o alinhamento de borboleta via OpenVAG."
+  },
+  "65535": {
+    "vag_code": "65535",
+    "obd_code": "P0600",
+    "component": "Módulo de Controle Defeituoso (Memória NVRAM / ROM Interna)",
+    "description": "Erro interno de integridade de checksum na memória da ECU.",
+    "symptoms": [
+      "Comportamento totalmente imprevisível do módulo",
+      "Módulo não aceita gravação de adaptações ou codificação"
+    ],
+    "multimeter_test": [
+      "1. Medir estabilidade das tensões de alimentação e aterramento sob carga.",
+      "2. Inspecionar se a placa da ECU não sofreu infiltração de água (muito comum pela churrasqueira do Gol)."
+    ],
+    "mechanical_fix": "Se as alimentações estiverem perfeitas, a memória EPROM/Flash ou o microcontrolador interno sofreram corrupção de dados: regravar arquivo original na bancada com programador ou substituir o módulo de injeção."
   }
 }

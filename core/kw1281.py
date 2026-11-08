@@ -227,6 +227,12 @@ class KW1281Engine:
         if not payload:
             return None
 
+        # Validação do terminador ETX (0x03) do protocolo KWP1281
+        end_byte = payload[-1]
+        if end_byte != 0x03:
+            logger.warning("Byte terminador de bloco desalinhado: 0x%02X (esperado 0x03 ETX). Descartando bloco corrompido.", end_byte)
+            return None
+
         counter = payload[0]
         title = payload[1] if len(payload) > 1 else 0
         data = payload[2:-1] if len(payload) > 3 else []

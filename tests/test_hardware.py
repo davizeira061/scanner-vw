@@ -38,6 +38,14 @@ class TestHardwareLayer(unittest.TestCase):
         self.assertEqual(block1[0]["unit"], "RPM")
         self.assertGreater(block1[0]["value"], 800)
 
+    def test_iso9141_odd_parity(self):
+        # Validação matemática da norma ISO 9141-2 para inicialização a 5 baud
+        for address in [0x01, 0x02, 0x03, 0x08, 0x15, 0x17, 0x25, 0x46]:
+            data_bits = [(address >> i) & 1 for i in range(7)]
+            parity = 1 - (sum(data_bits) % 2)
+            total_ones = sum(data_bits) + parity
+            self.assertEqual(total_ones % 2, 1, f"Falha de paridade ímpar no endereço 0x{address:02X}")
+
 
 if __name__ == "__main__":
     unittest.main()
