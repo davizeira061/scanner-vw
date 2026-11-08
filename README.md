@@ -117,7 +117,7 @@ Na grande maioria dos cabos KKL azuis vendidos na internet, o chip interno é o 
 ### 2. Executando o Aplicativo Compilado (.exe) *(Recomendado)*
 Não é necessário ter Python instalado na máquina para rodar a versão compilada:
 
-1. Baixe o pacote na aba [Releases](https://github.com/davizeira/scanner-vw/releases) ou use a pasta `dist/OpenVAG`.
+1. Baixe o pacote na aba [Releases](https://github.com/davizeira061/scanner-vw/releases) ou use a pasta `dist/OpenVAG`.
 2. Dê dois cliques em **`dist/OpenVAG/OpenVAG.exe`** ou no atalho **`Iniciar_OpenVAG.bat`**.
 3. O software abrirá imediatamente no padrão Dark Mode.
 
@@ -128,7 +128,7 @@ Caso deseje rodar ou desenvolver diretamente em Python:
 
 ```powershell
 # 1. Clone o repositório
-git clone https://github.com/davizeira/scanner-vw.git
+git clone https://github.com/davizeira061/scanner-vw.git
 cd scanner-vw
 
 # 2. Crie e ative um ambiente virtual (recomendado)
